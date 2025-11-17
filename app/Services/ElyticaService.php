@@ -11,6 +11,7 @@ class ElyticaService
 {
     protected $client;
     protected $modelPath;
+    protected $configPath;
     protected $projectName = 'diet-plan';
     protected $projectId = null;
     protected $applicationId; // Elytica application ID
@@ -27,6 +28,7 @@ class ElyticaService
 
         $this->client = new ComputeService($token);
         $this->modelPath = base_path(env('ELYTICA_MODEL_PATH', 'app/Services/model.hlpl'));
+        $this->configPath = base_path(env('ELYTICA_CONFIG_PATH', 'app/Services/model-config.json'));
 
         // Try to ensure project exists, but don't fail if it errors
         try {
@@ -67,18 +69,19 @@ class ElyticaService
                 'job_name' => $jobName
             ]);
 
-            // Step 2: Generate model.hlpl content dynamically from database
+            // Step 2: Generate model with dynamic data from database and user input
             $modelContent = $this->generateHLPLModel($modelData);
 
             // Save to file for debugging
             $debugPath = storage_path('app/debug_model_' . $jobId . '.hlpl');
             file_put_contents($debugPath, $modelContent);
 
-            Log::info('Generated HLPL model from database', [
+            Log::info('Generated HLPL model with user data', [
                 'file_size' => strlen($modelContent),
                 'project_id' => $this->projectId,
                 'upload_as' => $jobId . '.hlpl',
                 'debug_path' => $debugPath,
+                'user_data' => $modelData,
                 'first_200_chars' => substr($modelContent, 0, 200)
             ]);
 
@@ -504,6 +507,36 @@ class ElyticaService
     }
 
     /**
+     * Load configuration from JSON file
+     *
+     * @return array
+     */
+    protected function loadConfig(): array
+    {
+        if (!file_exists($this->configPath)) {
+            Log::warning('Config file not found, using defaults', [
+                'config_path' => $this->configPath
+            ]);
+            // Return default config
+            return [
+                'solver_settings' => [
+                    'gap_limit' => 0.001,
+                    'time_limit' => 60
+                ]
+            ];
+        }
+
+        $configContent = file_get_contents($this->configPath);
+        $config = json_decode($configContent, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \Exception('Failed to parse config JSON: ' . json_last_error_msg());
+        }
+
+        return $config;
+    }
+
+    /**
      * Generate HLPL model content dynamically from database
      *
      * @param array $userData User input data (weight, height, age, gender, activity_factor, goal)
@@ -511,16 +544,27 @@ class ElyticaService
      */
     protected function generateHLPLModel(array $userData = []): string
     {
-        $foods = Food::active()->get();
+        // ONLY use foods from actual scrapers (woolworths, checkers, crowd-sourced)
+        // DO NOT use placeholder/manual data with R5 prices
+        $foods = Food::active()
+            ->whereIn('source', ['woolworths', 'checkers', 'crowd-sourced'])
+            ->get();
+
         $count = $foods->count();
+
+        // Ensure we have real food data
+        if ($count === 0) {
+            Log::warning('No store food data found in database');
+            throw new \Exception('No store pricing data available. The system uses real prices from Woolworths and Checkers only. Please contact the administrator to enable price updates.');
+        }
 
         // Extract user data with defaults
         $weight = $userData['weight'] ?? 70;
         $height = $userData['height'] ?? 175;
         $age = $userData['age'] ?? 35;
-        $gender = $userData['gender'] ?? 'male'; // 'male' or 'female'
+        $gender = $userData['gender'] ?? 'male';
         $activityFactor = $userData['activity_factor'] ?? 1.55;
-        $goal = $userData['goal'] ?? 0; // -1 = loss, 0 = maintain, 1 = gain
+        $goal = $userData['goal'] ?? 0;
 
         // Build food indices
         $indices = range(1, $count);
@@ -535,31 +579,28 @@ class ElyticaService
         $fibers = [];
         $foodNames = [];
         $servingSizes = [];
+        $sources = [];
 
         foreach ($foods as $food) {
             $costs[] = (float) $food->cost;
             $proteins[] = (float) $food->protein;
             $carbs[] = (float) $food->carbs;
             $fats[] = (float) $food->fat;
-            // Convert kJ to kcal (divide by 4.184)
             $energies[] = round((float) $food->energy_kj / 4.184, 2);
             $fibers[] = (float) $food->fiber;
             $foodNames[] = $food->name;
             $servingSizes[] = $food->serving_size;
+            $sources[] = $food->source ?? 'unknown';
         }
 
-        // Calculate decade for REE
+        // Calculate metabolic values
         $decade = floor($age / 10) - 1;
-
-        // Convert gender to binary (1 = male, 0 = female)
         $genderBinary = ($gender === 'male' || $gender === 1) ? 1 : 0;
 
-        // Pre-calculate BMR and other metabolic values
         $bmrMale = 66.5 + 13.8 * $weight + 5.0 * $height - 6.8 * $age;
         $bmrFemale = 655.1 + 9.6 * $weight + 1.9 * $height - 4.7 * $age;
         $ree = 1 - 0.05 * $decade;
 
-        // Calculate final metabolic values
         $bmr = $genderBinary * $bmrMale + (1 - $genderBinary) * $bmrFemale;
         $bmr2 = $bmr * $ree;
         $tdee = $bmr2 * $activityFactor;
@@ -582,21 +623,20 @@ class ElyticaService
         $fatsJson = json_encode($fats);
         $energiesJson = json_encode($energies);
         $fibersJson = json_encode($fibers);
+        $sourcesJson = json_encode($sources);
 
-        // Nutritional requirements (protein, carbs, fat, fiber min requirements)
-        // Relaxed constraints to ensure feasibility
-        $proteinMin = 100;  // Relaxed from 150
-        $carbsMin = 150;    // Relaxed from 200
-        $carbsMax = 400;    // Relaxed from 300
-        $fatMin = 30;       // Relaxed from 50
-        $fatMax = 100;      // Relaxed from 80
-        $fiberMin = 20;     // Relaxed from 25
+        // Nutritional requirements
+        $proteinMin = 100;
+        $carbsMin = 150;
+        $carbsMax = 400;
+        $fatMin = 30;
+        $fatMax = 100;
+        $fiberMin = 20;
 
-        // Pre-compute display strings for Python output
         $genderStr = ($genderBinary == 1) ? 'Male' : 'Female';
         $goalStr = ($goal == -1) ? 'Weight Loss' : (($goal == 1) ? 'Weight Gain' : 'Maintenance');
 
-        // Generate HLPL model (pure HLPL without Python)
+        // Generate HLPL model
         $hlpl = <<<HLPL
 model diet_plan
 set FOODS = {$indicesStr};
@@ -621,7 +661,6 @@ constr sum_{f in FOODS}{fat_{f} * servings_{f}} >= {$fatMin};
 constr sum_{f in FOODS}{fat_{f} * servings_{f}} <= {$fatMax};
 constr sum_{f in FOODS}{fiber_{f} * servings_{f}} >= {$fiberMin};
 
-#constr servings_{f} <= 3 * isused_{f}, forall f in FOODS;
 constr sum_{f in FOODS}{isused_{f}} >= 5;
 end
 
@@ -637,8 +676,8 @@ def main():
     fats_list = {$fatsJson}
     calories_list = {$energiesJson}
     fiber_list = {$fibersJson}
+    sources_list = {$sourcesJson}
 
-    # Metabolic calculations
     bmr = {$bmr}
     bmr2 = {$bmr2}
     tdee = {$tdee}
@@ -655,27 +694,12 @@ def main():
     elytica.set_time_limit("diet_plan", 60)
 
     print("Initializing optimization model...")
-    try:
-        elytica.init_model("diet_plan")
-        print("Model initialized successfully")
-    except Exception as e:
-        print("ERROR initializing model: " + str(e))
-        raise
+    elytica.init_model("diet_plan")
 
     print("Solving optimization problem...")
-    try:
-        elytica.run_model("diet_plan")
-        print("Model solved successfully")
-    except Exception as e:
-        print("ERROR solving model: " + str(e))
-        raise
+    elytica.run_model("diet_plan")
 
-    try:
-        optimal_cost = elytica.get_best_primal_bound("diet_plan")
-        print("Results retrieved successfully")
-    except Exception as e:
-        print("ERROR retrieving results: " + str(e))
-        raise
+    optimal_cost = elytica.get_best_primal_bound("diet_plan")
 
     results = {
         "optimal_cost": round(optimal_cost, 2),
@@ -694,13 +718,13 @@ def main():
     }
 
     print("\\n=== METABOLIC CALCULATIONS ===")
-    print("BMR (Basal Metabolic Rate): " + str(round(bmr)) + " kcal")
-    print("BMR Adjusted (REE): " + str(round(bmr2)) + " kcal")
-    print("TDEE (Total Daily Energy Expenditure): " + str(round(tdee)) + " kcal")
+    print("BMR: " + str(round(bmr)) + " kcal")
+    print("BMR Adjusted: " + str(round(bmr2)) + " kcal")
+    print("TDEE: " + str(round(tdee)) + " kcal")
     print("Target Calories: " + str(round(target_cals)) + " kcal")
 
     print("\\n=== OPTIMAL DIET PLAN ===")
-    print("Minimum Cost: R" + str(round(optimal_cost, 2)) + "\\n")
+    print("Minimum Cost: R" + str(round(optimal_cost, 2)))
 
     for i in range(1, {$count} + 1):
         var_name = "servings" + str(i)
@@ -712,7 +736,8 @@ def main():
                 "name": food_names[food_index],
                 "servings": round(servings, 2),
                 "serving_size": serving_sizes[food_index],
-                "cost": round(servings * costs_list[food_index], 2)
+                "cost": round(servings * costs_list[food_index], 2),
+                "source": sources_list[food_index]
             }
             results["foods"].append(food_info)
 
@@ -722,8 +747,7 @@ def main():
             results["totals"]["calories"] += servings * calories_list[food_index]
             results["totals"]["fiber"] += servings * fiber_list[food_index]
 
-            food_cost = round(servings * costs_list[food_index], 2)
-            print(food_names[food_index] + ": " + str(round(servings, 2)) + " servings (R" + str(food_cost) + ")")
+            print(food_names[food_index] + ": " + str(round(servings, 2)) + " servings (R" + str(round(servings * costs_list[food_index], 2)) + ")")
 
     for key in results["totals"]:
         results["totals"][key] = round(results["totals"][key], 2)
@@ -735,12 +759,10 @@ def main():
     print("Fat: " + str(round(results['totals']['fat'], 1)) + "g")
     print("Fiber: " + str(round(results['totals']['fiber'], 1)) + "g")
 
-    # Write results to output file (Elytica will capture this)
     results_json = json.dumps(results, indent=2)
     print("\\n=== WRITING RESULTS ===")
     print(results_json)
 
-    # Also write using elytica API
     elytica.write_results(results_json)
     print("Results written successfully")
 

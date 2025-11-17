@@ -5,18 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Optimize Your Diet - DietPlan</title>
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vite CSS -->
+    @vite('resources/css/app.css')
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
-
-    <style>
-        body {
-            font-family: 'Instrument Sans', sans-serif;
-        }
-    </style>
 </head>
 <body class="antialiased">
     <div class="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
@@ -116,14 +110,41 @@
                             </div>
                         </div>
 
+                        <!-- Shopping Summary -->
+                        <div id="shopping-summary" class="hidden rounded-lg bg-blue-50 border border-blue-200 p-4">
+                            <div class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-blue-900 mb-1">Where to Shop</p>
+                                    <p class="text-sm text-blue-800" id="shopping-stores-text">Visit the stores indicated below to get these prices.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Store Information -->
+                        <div id="store-info" class="hidden rounded-lg bg-blue-50 border border-blue-200 p-4">
+                            <div class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-blue-900 mb-1">About Prices</p>
+                                    <p class="text-sm text-blue-800">Each item shows a store badge indicating where you can purchase it at the listed price.</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Food Servings List -->
                         <div class="rounded-lg bg-white p-6 shadow-md">
-                            <h3 class="mb-4 text-lg font-semibold text-gray-900">Recommended Daily Servings</h3>
+                            <h3 class="mb-2 text-lg font-semibold text-gray-900">Your Optimal Shopping List</h3>
+                            <p class="mb-4 text-sm text-gray-600">Buy these items daily to meet your nutrition goals at minimum cost:</p>
                             <div id="foods-list" class="space-y-3">
                                 <!-- Foods will be populated here by JavaScript -->
                             </div>
                             <div class="mt-4 rounded-lg bg-emerald-50 p-4">
-                                <p class="text-sm font-medium text-emerald-900">Daily Cost: <span id="result-cost" class="text-lg font-bold">-</span></p>
+                                <p class="text-sm font-medium text-emerald-900">Total Daily Cost: <span id="result-cost" class="text-lg font-bold">-</span></p>
                             </div>
                         </div>
 
@@ -146,6 +167,7 @@
                                 type="number"
                                 step="0.1"
                                 required
+                                value="75"
                                 placeholder="e.g., 70"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                             />
@@ -161,6 +183,7 @@
                                 name="height"
                                 type="number"
                                 required
+                                value="175"
                                 placeholder="e.g., 175"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                             />
@@ -176,6 +199,7 @@
                                 name="age"
                                 type="number"
                                 required
+                                value="28"
                                 placeholder="e.g., 30"
                                 class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                             />
@@ -192,8 +216,8 @@
                                 required
                                 class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                             >
-                                <option value="" disabled selected>Select your gender</option>
-                                <option value="male">Male</option>
+                                <option value="" disabled>Select your gender</option>
+                                <option value="male" selected>Male</option>
                                 <option value="female">Female</option>
                             </select>
                         </div>
@@ -244,10 +268,10 @@
                                 required
                                 class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                             >
-                                <option value="" disabled selected>Select your activity level</option>
+                                <option value="" disabled>Select your activity level</option>
                                 <option value="sedentary">Sedentary</option>
                                 <option value="lightly_active">Lightly Active</option>
-                                <option value="moderately_active">Moderately Active</option>
+                                <option value="moderately_active" selected>Moderately Active</option>
                                 <option value="very_active">Very Active</option>
                                 <option value="extremely_active">Extremely Active</option>
                             </select>
@@ -264,9 +288,9 @@
                                 required
                                 class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                             >
-                                <option value="" disabled selected>Select your goal</option>
+                                <option value="" disabled>Select your goal</option>
                                 <option value="lose_fat">Lose Fat</option>
-                                <option value="maintain_weight">Maintain Weight</option>
+                                <option value="maintain_weight" selected>Maintain Weight</option>
                                 <option value="gain_muscle">Gain Muscle</option>
                             </select>
                         </div>
@@ -467,21 +491,103 @@
             foodsList.innerHTML = ''; // Clear existing content
 
             if (data.foods && Array.isArray(data.foods) && data.foods.length > 0) {
+                // Collect unique stores and check for manual prices
+                const stores = new Set();
+                let hasManualPrices = false;
+                let hasRealStores = false;
+
                 data.foods.forEach(food => {
-                    // Extract grams from serving size string
-                    const gramMatch = food.serving_size.match(/(\d+)\s*g/);
+                    if (food.source) {
+                        stores.add(food.source);
+                        if (food.source === 'manual' || food.source === 'unknown') {
+                            hasManualPrices = true;
+                        } else if (food.source === 'woolworths' || food.source === 'checkers') {
+                            hasRealStores = true;
+                        }
+                    }
+                });
+
+                // Show shopping summary only if we have real store data
+                const summaryEl = document.getElementById('shopping-summary');
+                const storesTextEl = document.getElementById('shopping-stores-text');
+
+                if (hasRealStores) {
+                    const storeNames = Array.from(stores)
+                        .filter(s => s === 'woolworths' || s === 'checkers' || s === 'crowd-sourced')
+                        .map(s => {
+                            if (s === 'woolworths') return 'Woolworths';
+                            if (s === 'checkers') return 'Checkers';
+                            if (s === 'crowd-sourced') return 'various stores (crowd-sourced prices)';
+                            return s.charAt(0).toUpperCase() + s.slice(1);
+                        });
+
+                    if (storeNames.length === 1) {
+                        storesTextEl.textContent = `Shop at ${storeNames[0]} to get these prices.`;
+                    } else if (storeNames.length === 2) {
+                        storesTextEl.textContent = `Shop at ${storeNames[0]} and ${storeNames[1]} to get the best prices.`;
+                    } else if (storeNames.length > 2) {
+                        const lastStore = storeNames.pop();
+                        storesTextEl.textContent = `Shop at ${storeNames.join(', ')}, and ${lastStore} to get the best prices.`;
+                    }
+                    summaryEl.classList.remove('hidden');
+                }
+
+                // Always show store info
+                const storeInfoEl = document.getElementById('store-info');
+                storeInfoEl.classList.remove('hidden');
+
+                data.foods.forEach(food => {
+                    // Extract grams from serving size string (with null check)
                     let totalGramsText = '';
-                    if (gramMatch) {
-                        const gramsPerServing = parseFloat(gramMatch[1]);
-                        const total = (food.servings * gramsPerServing).toFixed(0);
-                        totalGramsText = `${total}g`;
+                    if (food.serving_size) {
+                        const gramMatch = food.serving_size.match(/(\d+)\s*g/);
+                        if (gramMatch) {
+                            const gramsPerServing = parseFloat(gramMatch[1]);
+                            const total = (food.servings * gramsPerServing).toFixed(0);
+                            totalGramsText = `${total}g`;
+                        } else {
+                            // If no grams found, show servings
+                            totalGramsText = `${food.servings} servings`;
+                        }
                     } else {
-                        // If no grams found, show servings
+                        // If serving_size is missing, just show servings
                         totalGramsText = `${food.servings} servings`;
                     }
 
                     // Remove text in parentheses from food name
                     const cleanName = food.name.replace(/\s*\([^)]*\)/g, '').trim();
+
+                    // Format store badge - ALWAYS show source
+                    let storeHTML = '';
+                    let storeName = '';
+                    let storeColor = '';
+                    let storeIcon = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>`;
+
+                    if (food.source === 'woolworths') {
+                        storeName = 'Woolworths';
+                        storeColor = 'bg-green-100 text-green-700';
+                    } else if (food.source === 'checkers') {
+                        storeName = 'Checkers';
+                        storeColor = 'bg-blue-100 text-blue-700';
+                    } else if (food.source === 'crowd-sourced') {
+                        storeName = 'Verified by users';
+                        storeColor = 'bg-purple-100 text-purple-700';
+                    } else if (food.source === 'manual' || food.source === 'unknown' || !food.source) {
+                        storeName = 'Available at various stores';
+                        storeColor = 'bg-gray-100 text-gray-600';
+                    } else {
+                        // Any other source, capitalize and show it
+                        storeName = food.source.charAt(0).toUpperCase() + food.source.slice(1);
+                        storeColor = 'bg-gray-100 text-gray-700';
+                    }
+
+                    storeHTML = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${storeColor} mt-1">
+                        ${storeIcon}
+                        ${storeName}
+                    </span>`;
 
                     const foodItem = document.createElement('div');
                     foodItem.className = 'flex items-center justify-between rounded-lg border border-gray-200 p-4 hover:bg-gray-50 transition';
@@ -489,6 +595,7 @@
                         <div class="flex-1">
                             <p class="font-semibold text-gray-900">${cleanName}</p>
                             <p class="text-sm text-gray-600">${totalGramsText}</p>
+                            ${storeHTML}
                         </div>
                         <div class="text-right">
                             <p class="font-bold text-emerald-600">R${food.cost.toFixed(2)}</p>
@@ -510,6 +617,8 @@
             document.getElementById('diet-form').classList.remove('hidden');
             document.getElementById('loading-state').classList.add('hidden');
             document.getElementById('results-state').classList.add('hidden');
+            document.getElementById('shopping-summary').classList.add('hidden');
+            document.getElementById('store-info').classList.add('hidden');
             document.getElementById('diet-form').reset();
         }
 

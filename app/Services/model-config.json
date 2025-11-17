@@ -1,0 +1,72 @@
+{
+  "model_name": "diet_plan",
+  "solver_settings": {
+    "gap_limit": 0.001,
+    "time_limit": 60
+  },
+  "variables": {
+    "servings": {
+      "type": "continuous",
+      "min": 0,
+      "max": 3,
+      "index": "FOODS"
+    },
+    "isused": {
+      "type": "binary",
+      "index": "FOODS"
+    }
+  },
+  "objective": {
+    "type": "min",
+    "expression": "sum_{f in FOODS}{cost_{f} * servings_{f}}"
+  },
+  "constraints": {
+    "min_variety": {
+      "expression": "sum_{f in FOODS}{isused_{f}} >= 5"
+    }
+  },
+  "nutritional_requirements": {
+    "protein": {
+      "min": 100,
+      "default_min": 150
+    },
+    "carbs": {
+      "min": 150,
+      "max": 400,
+      "default_min": 200,
+      "default_max": 300
+    },
+    "fat": {
+      "min": 30,
+      "max": 100,
+      "default_min": 50,
+      "default_max": 80
+    },
+    "fiber": {
+      "min": 20,
+      "default_min": 25
+    }
+  },
+  "metabolic_formulas": {
+    "bmr": {
+      "male": "66.5 + 13.8 * weight + 5.0 * height - 6.8 * age",
+      "female": "655.1 + 9.6 * weight + 1.9 * height - 4.7 * age"
+    },
+    "ree_factor": "1 - 0.05 * decade",
+    "tdee": "bmr * ree * activity_factor",
+    "target_calories": "tdee + (goal * 500)"
+  },
+  "goal_mapping": {
+    "-1": "Weight Loss",
+    "0": "Maintenance",
+    "1": "Weight Gain"
+  },
+  "default_user_params": {
+    "weight": 70,
+    "height": 175,
+    "age": 35,
+    "gender": "male",
+    "activity_factor": 1.55,
+    "goal": 0
+  }
+}
