@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"C:/Users/simon/.config/herd/bin/php.bat\" artisan tinker --execute=\"echo ''Food count: '' . App\\Models\\Food::count();\")"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "elytica"
+  ]
+}

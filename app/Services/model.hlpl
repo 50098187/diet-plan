@@ -1,0 +1,119 @@
+model diet_plan
+set FOODS = {1,2,3,4,5,6,7,8,9,10};
+
+const cost = {3.5, 1.2, 2.0, 2.5, 1.5, 6.0, 0.8, 5.5, 3.0, 1.8}, forall f in FOODS;
+const protein = {31.0, 2.6, 2.8, 13.0, 1.6, 25.0, 2.5, 21.0, 10.0, 2.9}, forall f in FOODS;
+const carbs = {0.0, 23.0, 7.0, 1.1, 20.0, 0.0, 12.0, 22.0, 3.6, 3.6}, forall f in FOODS;
+const fat = {3.6, 0.9, 0.4, 11.0, 0.1, 13.0, 1.4, 49.0, 0.4, 0.4}, forall f in FOODS;
+const calories = {165, 112, 34, 155, 86, 208, 71, 579, 59, 23}, forall f in FOODS;
+const fiber = {0.0, 1.8, 2.6, 0.0, 3.0, 0.0, 1.7, 12.5, 0.0, 2.2}, forall f in FOODS;
+const calcium = {15, 10, 47, 56, 30, 12, 8, 269, 110, 99}, forall f in FOODS;
+const iron = {1.0, 0.4, 0.7, 1.8, 0.6, 0.8, 0.7, 3.7, 0.1, 2.7}, forall f in FOODS;
+
+var 0<=servings<=10, forall f in FOODS;
+
+min sum_{f in FOODS}{cost_{f} * servings_{f}};
+
+constr sum_{f in FOODS}{calories_{f} * servings_{f}} >= 2000;
+constr sum_{f in FOODS}{calories_{f} * servings_{f}} <= 2500;
+constr sum_{f in FOODS}{protein_{f} * servings_{f}} >= 150;
+constr sum_{f in FOODS}{carbs_{f} * servings_{f}} >= 200;
+constr sum_{f in FOODS}{carbs_{f} * servings_{f}} <= 300;
+constr sum_{f in FOODS}{fat_{f} * servings_{f}} >= 50;
+constr sum_{f in FOODS}{fat_{f} * servings_{f}} <= 80;
+constr sum_{f in FOODS}{fiber_{f} * servings_{f}} >= 25;
+constr sum_{f in FOODS}{calcium_{f} * servings_{f}} >= 1000;
+constr sum_{f in FOODS}{iron_{f} * servings_{f}} >= 18;
+end
+
+import elytica
+import json
+import os
+
+def main():
+    food_names = [
+        "Chicken Breast", "Brown Rice", "Broccoli", "Eggs",
+        "Sweet Potato", "Salmon", "Oatmeal", "Almonds",
+        "Greek Yogurt", "Spinach"
+    ]
+
+    elytica.set_gap_limit("diet_plan", 0.001)
+    elytica.set_time_limit("diet_plan", 60)
+
+    print("Initializing diet optimization model...")
+    elytica.init_model("diet_plan")
+
+    print("Solving optimization problem...")
+    elytica.run_model("diet_plan")
+
+    optimal_cost = elytica.get_best_primal_bound("diet_plan")
+
+    results = {
+        "optimal_cost": round(optimal_cost, 2),
+        "foods": [],
+        "totals": {
+            "calories": 0,
+            "protein": 0,
+            "carbs": 0,
+            "fat": 0,
+            "fiber": 0,
+            "calcium": 0,
+            "iron": 0
+        }
+    }
+
+    print("\n=== OPTIMAL DIET PLAN ===")
+    print(f"Minimum Cost: ${optimal_cost:.2f}\n")
+
+    costs_list = [3.5, 1.2, 2.0, 2.5, 1.5, 6.0, 0.8, 5.5, 3.0, 1.8]
+    nutrition = [
+        [31.0, 0.0, 3.6, 165, 0.0, 15, 1.0],
+        [2.6, 23.0, 0.9, 112, 1.8, 10, 0.4],
+        [2.8, 7.0, 0.4, 34, 2.6, 47, 0.7],
+        [13.0, 1.1, 11.0, 155, 0.0, 56, 1.8],
+        [1.6, 20.0, 0.1, 86, 3.0, 30, 0.6],
+        [25.0, 0.0, 13.0, 208, 0.0, 12, 0.8],
+        [2.5, 12.0, 1.4, 71, 1.7, 8, 0.7],
+        [21.0, 22.0, 49.0, 579, 12.5, 269, 3.7],
+        [10.0, 3.6, 0.4, 59, 0.0, 110, 0.1],
+        [2.9, 3.6, 0.4, 23, 2.2, 99, 2.7]
+    ]
+
+    for i in range(1, 11):
+        var_name = f"servings{i}"
+        servings = elytica.get_variable_value("diet_plan", var_name)
+
+        if servings > 0.01:
+            food_index = i - 1
+            food_info = {
+                "name": food_names[food_index],
+                "servings": round(servings, 2),
+                "cost": round(servings * costs_list[food_index], 2)
+            }
+            results["foods"].append(food_info)
+
+            results["totals"]["protein"] += servings * nutrition[food_index][0]
+            results["totals"]["carbs"] += servings * nutrition[food_index][1]
+            results["totals"]["fat"] += servings * nutrition[food_index][2]
+            results["totals"]["calories"] += servings * nutrition[food_index][3]
+            results["totals"]["fiber"] += servings * nutrition[food_index][4]
+            results["totals"]["calcium"] += servings * nutrition[food_index][5]
+            results["totals"]["iron"] += servings * nutrition[food_index][6]
+
+            print(f"{food_names[food_index]}: {servings:.2f} servings (${servings * costs_list[food_index]:.2f})")
+
+    for key in results["totals"]:
+        results["totals"][key] = round(results["totals"][key], 2)
+
+    print(f"\n=== NUTRITIONAL TOTALS ===")
+    print(f"Calories: {results['totals']['calories']:.0f} kcal")
+    print(f"Protein: {results['totals']['protein']:.1f}g")
+    print(f"Carbs: {results['totals']['carbs']:.1f}g")
+    print(f"Fat: {results['totals']['fat']:.1f}g")
+    print(f"Fiber: {results['totals']['fiber']:.1f}g")
+    print(f"Calcium: {results['totals']['calcium']:.0f}mg")
+    print(f"Iron: {results['totals']['iron']:.1f}mg")
+
+    elytica.write_results(json.dumps(results, indent=2))
+
+    return 0

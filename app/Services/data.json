@@ -1,0 +1,136 @@
+{
+  "foods": [
+    {
+      "name": "Chicken Breast",
+      "cost": 3.5,
+      "protein": 31.0,
+      "carbs": 0.0,
+      "fat": 3.6,
+      "calories": 165,
+      "fiber": 0.0,
+      "calcium": 15,
+      "iron": 1.0,
+      "serving_size": "100g"
+    },
+    {
+      "name": "Brown Rice",
+      "cost": 1.2,
+      "protein": 2.6,
+      "carbs": 23.0,
+      "fat": 0.9,
+      "calories": 112,
+      "fiber": 1.8,
+      "calcium": 10,
+      "iron": 0.4,
+      "serving_size": "100g"
+    },
+    {
+      "name": "Broccoli",
+      "cost": 2.0,
+      "protein": 2.8,
+      "carbs": 7.0,
+      "fat": 0.4,
+      "calories": 34,
+      "fiber": 2.6,
+      "calcium": 47,
+      "iron": 0.7,
+      "serving_size": "100g"
+    },
+    {
+      "name": "Eggs",
+      "cost": 2.5,
+      "protein": 13.0,
+      "carbs": 1.1,
+      "fat": 11.0,
+      "calories": 155,
+      "fiber": 0.0,
+      "calcium": 56,
+      "iron": 1.8,
+      "serving_size": "100g"
+    },
+    {
+      "name": "Sweet Potato",
+      "cost": 1.5,
+      "protein": 1.6,
+      "carbs": 20.0,
+      "fat": 0.1,
+      "calories": 86,
+      "fiber": 3.0,
+      "calcium": 30,
+      "iron": 0.6,
+      "serving_size": "100g"
+    },
+    {
+      "name": "Salmon",
+      "cost": 6.0,
+      "protein": 25.0,
+      "carbs": 0.0,
+      "fat": 13.0,
+      "calories": 208,
+      "fiber": 0.0,
+      "calcium": 12,
+      "iron": 0.8,
+      "serving_size": "100g"
+    },
+    {
+      "name": "Oatmeal",
+      "cost": 0.8,
+      "protein": 2.5,
+      "carbs": 12.0,
+      "fat": 1.4,
+      "calories": 71,
+      "fiber": 1.7,
+      "calcium": 8,
+      "iron": 0.7,
+      "serving_size": "100g"
+    },
+    {
+      "name": "Almonds",
+      "cost": 5.5,
+      "protein": 21.0,
+      "carbs": 22.0,
+      "fat": 49.0,
+      "calories": 579,
+      "fiber": 12.5,
+      "calcium": 269,
+      "iron": 3.7,
+      "serving_size": "100g"
+    },
+    {
+      "name": "Greek Yogurt",
+      "cost": 3.0,
+      "protein": 10.0,
+      "carbs": 3.6,
+      "fat": 0.4,
+      "calories": 59,
+      "fiber": 0.0,
+      "calcium": 110,
+      "iron": 0.1,
+      "serving_size": "100g"
+    },
+    {
+      "name": "Spinach",
+      "cost": 1.8,
+      "protein": 2.9,
+      "carbs": 3.6,
+      "fat": 0.4,
+      "calories": 23,
+      "fiber": 2.2,
+      "calcium": 99,
+      "iron": 2.7,
+      "serving_size": "100g"
+    }
+  ],
+  "requirements": {
+    "min_calories": 2000,
+    "max_calories": 2500,
+    "min_protein": 150,
+    "min_carbs": 200,
+    "max_carbs": 300,
+    "min_fat": 50,
+    "max_fat": 80,
+    "min_fiber": 25,
+    "min_calcium": 1000,
+    "min_iron": 18
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "elytica": {
+      "url": "https://service.elytica.com/mcp/elytica",
+      "type": "http",
+      "headers": {
+        "Authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiJhMDNlYWJiZS1jZWEwLTRlMjUtOTU0Ny0yN2U0N2Y0OWE5YTMiLCJqdGkiOiI5OTFjYmM1NDJkNjcxZTQyYTc0ZWIyMjY1NzlmNzFmZWNjNzBjNDEzZDY0MTQwYjIxMzcwY2Y0YTA5MWRjZGJkODMxODhlZDg5N2E1MjM0NiIsImlhdCI6MTc2MzExMzcyMi45MzA4NzgsIm5iZiI6MTc2MzExMzcyMi45MzA4OCwiZXhwIjoxNzc4NzUyMTIyLjkyNDQ1Miwic3ViIjoiNzEzIiwic2NvcGVzIjpbIm1jcDp1c2UiXX0.xoWUfeYt5PwEKx4OxA6DJFPvW29aEzIDNqcYZBZWzqYJWv2HER8-O-zsv2Rgg_wf9x4qse6spC4MBxb8RcHAbxFDE-RgBw-5NnkTnW4bKGOERqOXGo2r0y21sN6hHQburREi8LASxtod6W5EmuHq--hhmKKlBR8ObQuvOT0191Bgqp8XnTOWHR5TakpPHtu2YbSCgbpSA2Ws5W1fEBYtw_I6Z_PMiLnyFsxGeAE36gsAq3lb-6n4ei_0nGuspA_oKq5fjEFFF6ZrM9LRHm__50vXxqpxCTc2Abpi9qPLfVY9ZkT0HJ-9EW_jVyOjw-F3M-U7jLCllzbk3nJeltG-Ge4h4m_ka2dFPtbMtLhj9Yte9ZqCav1TaH22EnjoYi6Ww0hMVuKQ1OCOZ4qAaYhC8ISXEBe1MepbFlXorZBjbvVEwwJ-sCdSa0r8k6xYl72M8FmwyCsu5G5CMKpbZ6wZij0cO6ijz9HZG11Fjw-nNmwQqsBSU_8p_vtfj964hJWWS2KJUqGHEFuLXIrX1y2lGPzhUBOdlMVnJ7Tsw8kpMDDUGMJnrYUB6WGi19_Z1GhzVnaG5OgQkxS_H8LWdFGB0oe8WyxvERxNLgEjhFV0qtiRb3vAMmrTJtN6ug3tx5JeYTBlxlCX7mWeTrWkRjgDa6_Dl68Xmgp8lHUF7gqu-FY"
+      }
+    }
+  },
+  "_info": {
+    "token_name": "MCP Access Token - 2025-11-14 09:48:42",
+    "created_at": "2025-11-14T09:48:42+00:00",
+    "scopes": [
+      "mcp:use"
+    ],
+    "warning": "Keep this token secure. Do not share it or commit it to version control."
+  }
+}
