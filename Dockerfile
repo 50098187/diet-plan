@@ -1,14 +1,6 @@
-FROM node:18 AS node-builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --include=dev
-COPY . .
-RUN npm run build
-
 FROM richarvey/nginx-php-fpm:3.1.6
 
 COPY . .
-COPY --from=node-builder /app/public/build ./public/build
 
 # Image config
 ENV SKIP_COMPOSER 1
