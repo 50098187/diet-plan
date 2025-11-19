@@ -46,8 +46,9 @@ RUN mkdir -p /var/www/database && \
 EXPOSE 8080
 
 # Start application
-CMD php artisan config:clear && \
+CMD php artisan migrate --force && \ 
+    php artisan config:clear && \
     php artisan cache:clear && \
-    php artisan migrate --force && \
+    php artisan storage:link && \
     php artisan db:seed --class=RealFoodPricesSeeder --force && \
     php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
