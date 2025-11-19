@@ -28,6 +28,7 @@ class DietPlanController extends Controller
             'gender' => 'required|in:male,female',
             'activity_factor' => 'required|in:sedentary,lightly_active,moderately_active,very_active,extremely_active',
             'goal' => 'required|in:lose_fat,maintain_weight,gain_muscle',
+            'diet_type' => 'required|in:normal,vegetarian,vegan',
         ]);
 
         // Convert activity factor to numeric multiplier
@@ -64,6 +65,7 @@ class DietPlanController extends Controller
             'activity_factor' => $activityMultipliers[$validated['activity_factor']],
             'goal' => $goalValues[$validated['goal']],
             'gender' => $validated['gender'] === 'male' ? 1 : 0,
+            'diet_type' => $validated['diet_type'],
         ];
 
         try {

@@ -11,6 +11,13 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
+
+    <style>
+        .day-tab.active {
+            color: rgb(5 150 105);
+            border-bottom-color: rgb(5 150 105);
+        }
+    </style>
 </head>
 <body class="antialiased">
     <div class="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
@@ -25,20 +32,20 @@
 
         <!-- Main Content -->
         <main class="mx-auto max-w-7xl px-6 py-12 lg:px-8 lg:py-20">
-            <div class="grid gap-12 lg:grid-cols-2 lg:gap-16 lg:items-center">
+            <div class="grid gap-12 lg:grid-cols-5 lg:gap-16 lg:items-start">
                 <!-- Hero Section -->
-                <div class="space-y-6">
+                <div class="space-y-6 lg:col-span-2">
                     <div class="inline-block rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-medium text-emerald-700">
                         Smart Nutrition Planning
                     </div>
 
                     <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
-                        Optimize Your Diet,
+                        Optimize Your Diet, <br>
                         <span class="text-emerald-600">Minimize Your Cost</span>
                     </h1>
 
                     <p class="text-lg text-gray-600">
-                        Get a personalized, budget-friendly meal plan based on your fitness goals. Our advanced optimization model creates the perfect nutrition strategy tailored to your body and objectives.
+                        Get a personalized, budget-friendly meal plan based on your fitness goals. This advanced optimization model creates the perfect nutrition strategy tailored to your body and objectives.
                     </p>
 
                     <!-- Features List -->
@@ -65,7 +72,7 @@
                 </div>
 
                 <!-- Form Section -->
-                <div class="rounded-2xl bg-white p-8 shadow-xl">
+                <div class="rounded-2xl bg-white p-8 shadow-xl lg:col-span-3">
                     <h2 class="mb-6 text-2xl font-bold text-gray-900" id="form-title">
                         Get Your Custom Plan
                     </h2>
@@ -79,77 +86,81 @@
                     </div>
 
                     <!-- Results State -->
-                    <div id="results-state" class="hidden space-y-4">
-                        <div class="rounded-lg bg-emerald-50 p-6">
-                            <h3 class="mb-4 text-lg font-semibold text-emerald-900">Your Personalized Diet Plan</h3>
-                            <div class="grid gap-4 sm:grid-cols-2">
-                                <div class="rounded-lg bg-white p-4">
-                                    <p class="text-sm text-gray-600">Daily Calories</p>
-                                    <p class="text-2xl font-bold text-gray-900" id="result-calories">-</p>
-                                </div>
-                                <div class="rounded-lg bg-white p-4">
-                                    <p class="text-sm text-gray-600">BMR</p>
+                    <div id="results-state" class="hidden space-y-6">
+                        <!-- Metabolic Summary -->
+                        <div class="rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 p-6 border border-emerald-200">
+                            <h3 class="mb-4 text-lg font-semibold text-emerald-900">Your Metabolic Profile</h3>
+                            <div class="grid gap-3 sm:grid-cols-3">
+                                <div class="rounded-lg bg-white p-4 shadow-sm">
+                                    <p class="text-xs text-gray-600 uppercase tracking-wide">BMR</p>
                                     <p class="text-2xl font-bold text-gray-900" id="result-bmr">-</p>
+                                    <p class="text-xs text-gray-500 mt-1">Basal Metabolic Rate</p>
                                 </div>
-                                <div class="rounded-lg bg-white p-4">
-                                    <p class="text-sm text-gray-600">Protein</p>
-                                    <p class="text-2xl font-bold text-gray-900" id="result-protein">-</p>
-                                </div>
-                                <div class="rounded-lg bg-white p-4">
-                                    <p class="text-sm text-gray-600">Carbs</p>
-                                    <p class="text-2xl font-bold text-gray-900" id="result-carbs">-</p>
-                                </div>
-                                <div class="rounded-lg bg-white p-4">
-                                    <p class="text-sm text-gray-600">Fats</p>
-                                    <p class="text-2xl font-bold text-gray-900" id="result-fats">-</p>
-                                </div>
-                                <div class="rounded-lg bg-white p-4">
-                                    <p class="text-sm text-gray-600">TDEE</p>
+                                <div class="rounded-lg bg-white p-4 shadow-sm">
+                                    <p class="text-xs text-gray-600 uppercase tracking-wide">TDEE</p>
                                     <p class="text-2xl font-bold text-gray-900" id="result-tdee">-</p>
+                                    <p class="text-xs text-gray-500 mt-1">Total Daily Energy</p>
+                                </div>
+                                <div class="rounded-lg bg-white p-4 shadow-sm">
+                                    <p class="text-xs text-gray-600 uppercase tracking-wide">Avg Daily</p>
+                                    <p class="text-2xl font-bold text-gray-900" id="result-avg-calories">-</p>
+                                    <p class="text-xs text-gray-500 mt-1">Average Calories</p>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Shopping Summary -->
-                        <div id="shopping-summary" class="hidden rounded-lg bg-blue-50 border border-blue-200 p-4">
-                            <div class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <div class="flex-1">
-                                    <p class="text-sm font-semibold text-blue-900 mb-1">Where to Shop</p>
-                                    <p class="text-sm text-blue-800" id="shopping-stores-text">Visit the stores indicated below to get these prices.</p>
+                        <!-- Weekly Shopping List -->
+                        <div class="rounded-lg bg-white p-6 shadow-lg border border-gray-200">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-xl font-bold text-gray-900">🛒 Weekly Shopping List</h3>
+                                <div class="rounded-lg bg-emerald-100 px-4 py-2">
+                                    <p class="text-sm font-medium text-emerald-900">Total: <span id="weekly-cost" class="text-lg font-bold">-</span></p>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Store Information -->
-                        <div id="store-info" class="hidden rounded-lg bg-blue-50 border border-blue-200 p-4">
-                            <div class="flex items-start gap-3">
-                                <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <div class="flex-1">
-                                    <p class="text-sm font-semibold text-blue-900 mb-1">About Prices</p>
-                                    <p class="text-sm text-blue-800">Each item shows a store badge indicating where you can purchase it at the listed price.</p>
-                                </div>
+                            <p class="mb-4 text-sm text-gray-600">Buy these items once for the entire week:</p>
+                            <div id="weekly-shopping-list" class="space-y-2">
+                                <!-- Weekly shopping items will be populated here -->
                             </div>
                         </div>
 
-                        <!-- Food Servings List -->
-                        <div class="rounded-lg bg-white p-6 shadow-md">
-                            <h3 class="mb-2 text-lg font-semibold text-gray-900">Your Optimal Shopping List</h3>
-                            <p class="mb-4 text-sm text-gray-600">Buy these items daily to meet your nutrition goals at minimum cost:</p>
-                            <div id="foods-list" class="space-y-3">
-                                <!-- Foods will be populated here by JavaScript -->
+                        <!-- 7-Day Meal Plans -->
+                        <div class="rounded-lg bg-white p-6 shadow-lg border border-gray-200">
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">📋 7-Day Meal Plans</h3>
+                            <p class="mb-4 text-sm text-gray-600">Each day has a unique optimized meal plan with variety:</p>
+
+                            <!-- Day Tabs -->
+                            <div class="flex overflow-x-auto border-b border-gray-200 mb-4">
+                                <button id="tab-btn-1" class="day-tab px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600 transition active" onclick="switchDay(1)">
+                                    Monday
+                                </button>
+                                <button id="tab-btn-2" class="day-tab px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600 transition" onclick="switchDay(2)">
+                                    Tuesday
+                                </button>
+                                <button id="tab-btn-3" class="day-tab px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600 transition" onclick="switchDay(3)">
+                                    Wednesday
+                                </button>
+                                <button id="tab-btn-4" class="day-tab px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600 transition" onclick="switchDay(4)">
+                                    Thursday
+                                </button>
+                                <button id="tab-btn-5" class="day-tab px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600 transition" onclick="switchDay(5)">
+                                    Friday
+                                </button>
+                                <button id="tab-btn-6" class="day-tab px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600 transition" onclick="switchDay(6)">
+                                    Saturday
+                                </button>
+                                <button id="tab-btn-7" class="day-tab px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600 transition" onclick="switchDay(7)">
+                                    Sunday
+                                </button>
                             </div>
-                            <div class="mt-4 rounded-lg bg-emerald-50 p-4">
-                                <p class="text-sm font-medium text-emerald-900">Total Daily Cost: <span id="result-cost" class="text-lg font-bold">-</span></p>
+
+                            <!-- Day Content Container -->
+                            <div id="days-container">
+                                <!-- Daily meal plans will be populated here -->
                             </div>
                         </div>
 
-                        <button onclick="resetForm()" class="w-full rounded-lg bg-emerald-600 px-6 py-3 text-base font-semibold text-white transition hover:bg-emerald-700">
-                            Calculate Again
+                        <button onclick="resetForm()" class="w-full rounded-lg bg-emerald-600 px-6 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-emerald-700">
+                            Calculate New Plan
                         </button>
                     </div>
 
@@ -295,6 +306,24 @@
                             </select>
                         </div>
 
+                        <!-- Diet Type -->
+                        <div>
+                            <label for="diet_type" class="block text-sm font-medium text-gray-700 mb-2">
+                                Diet Type
+                            </label>
+                            <select
+                                id="diet_type"
+                                name="diet_type"
+                                required
+                                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                            >
+                                <option value="" disabled>Select your diet preference</option>
+                                <option value="normal" selected>Normal (includes all foods)</option>
+                                <option value="vegetarian">Vegetarian (no meat, includes dairy & eggs)</option>
+                                <option value="vegan">Vegan (plant-based only)</option>
+                            </select>
+                        </div>
+
                         <!-- Submit Button -->
                         <button
                             type="submit"
@@ -427,10 +456,13 @@
                     });
 
                     const data = await response.json();
+                    console.log('Polling response:', data);
 
                     if (data.success) {
                         if (data.status === 'completed' && data.data) {
                             // Job completed, show results
+                            console.log('Job completed! Stopping polling and showing results...');
+                            console.log('Full completed data:', data.data);
                             stopPolling();
                             showResults(data.data);
                         } else if (data.status === 'failed' || data.status === 'error') {
@@ -460,167 +492,321 @@
             }
         }
 
-        // Show results
+        // Global variable to track selected day
+        let selectedDay = 0;
+
+        // Show weekly results
         function showResults(data) {
-            console.log('Showing results:', data);
+            console.log('Showing weekly results:', data);
 
             // Hide loading state
             document.getElementById('loading-state').classList.add('hidden');
 
-            // Update results (handle both old and new data formats)
-            document.getElementById('result-calories').textContent = Math.round(data.target_calories || 0) + ' kcal';
+            // Update metabolic profile
             document.getElementById('result-bmr').textContent = Math.round(data.bmr || 0) + ' kcal';
-
-            // Try both field names for macros (totals.protein vs protein_grams)
-            const protein = data.totals?.protein || data.protein_grams || 0;
-            const carbs = data.totals?.carbs || data.carb_grams || 0;
-            const fats = data.totals?.fat || data.fat_grams || 0;
-
-            document.getElementById('result-protein').textContent = Math.round(protein) + 'g';
-            document.getElementById('result-carbs').textContent = Math.round(carbs) + 'g';
-            document.getElementById('result-fats').textContent = Math.round(fats) + 'g';
             document.getElementById('result-tdee').textContent = Math.round(data.tdee || 0) + ' kcal';
+            document.getElementById('result-avg-calories').textContent = Math.round(data.avg_target_calories || 0) + ' kcal';
 
-            // Display optimal cost
-            if (data.optimal_cost) {
-                document.getElementById('result-cost').textContent = 'R' + data.optimal_cost.toFixed(2);
-            }
+            // Update weekly cost
+            document.getElementById('weekly-cost').textContent = 'R' + (data.optimal_weekly_cost || 0).toFixed(2);
 
-            // Display food servings
-            const foodsList = document.getElementById('foods-list');
-            foodsList.innerHTML = ''; // Clear existing content
+            // Display weekly shopping list
+            const shoppingList = document.getElementById('weekly-shopping-list');
+            shoppingList.innerHTML = '';
 
-            if (data.foods && Array.isArray(data.foods) && data.foods.length > 0) {
-                // Collect unique stores and check for manual prices
-                const stores = new Set();
-                let hasManualPrices = false;
-                let hasRealStores = false;
-
-                data.foods.forEach(food => {
-                    if (food.source) {
-                        stores.add(food.source);
-                        if (food.source === 'manual' || food.source === 'unknown') {
-                            hasManualPrices = true;
-                        } else if (food.source === 'woolworths' || food.source === 'checkers') {
-                            hasRealStores = true;
-                        }
-                    }
-                });
-
-                // Show shopping summary only if we have real store data
-                const summaryEl = document.getElementById('shopping-summary');
-                const storesTextEl = document.getElementById('shopping-stores-text');
-
-                if (hasRealStores) {
-                    const storeNames = Array.from(stores)
-                        .filter(s => s === 'woolworths' || s === 'checkers' || s === 'crowd-sourced')
-                        .map(s => {
-                            if (s === 'woolworths') return 'Woolworths';
-                            if (s === 'checkers') return 'Checkers';
-                            if (s === 'crowd-sourced') return 'various stores (crowd-sourced prices)';
-                            return s.charAt(0).toUpperCase() + s.slice(1);
-                        });
-
-                    if (storeNames.length === 1) {
-                        storesTextEl.textContent = `Shop at ${storeNames[0]} to get these prices.`;
-                    } else if (storeNames.length === 2) {
-                        storesTextEl.textContent = `Shop at ${storeNames[0]} and ${storeNames[1]} to get the best prices.`;
-                    } else if (storeNames.length > 2) {
-                        const lastStore = storeNames.pop();
-                        storesTextEl.textContent = `Shop at ${storeNames.join(', ')}, and ${lastStore} to get the best prices.`;
-                    }
-                    summaryEl.classList.remove('hidden');
-                }
-
-                // Always show store info
-                const storeInfoEl = document.getElementById('store-info');
-                storeInfoEl.classList.remove('hidden');
-
-                data.foods.forEach(food => {
-                    // Extract grams from serving size string (with null check)
-                    let totalGramsText = '';
-                    if (food.serving_size) {
-                        const gramMatch = food.serving_size.match(/(\d+)\s*g/);
-                        if (gramMatch) {
-                            const gramsPerServing = parseFloat(gramMatch[1]);
-                            const total = (food.servings * gramsPerServing).toFixed(0);
-                            totalGramsText = `${total}g`;
-                        } else {
-                            // If no grams found, show servings
-                            totalGramsText = `${food.servings} servings`;
-                        }
-                    } else {
-                        // If serving_size is missing, just show servings
-                        totalGramsText = `${food.servings} servings`;
-                    }
-
-                    // Remove text in parentheses from food name
-                    const cleanName = food.name.replace(/\s*\([^)]*\)/g, '').trim();
-
-                    // Format store badge - ALWAYS show source
-                    let storeHTML = '';
-                    let storeName = '';
-                    let storeColor = '';
-                    let storeIcon = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    </svg>`;
-
-                    if (food.source === 'woolworths') {
-                        storeName = 'Woolworths';
-                        storeColor = 'bg-green-100 text-green-700';
-                    } else if (food.source === 'checkers') {
-                        storeName = 'Checkers';
-                        storeColor = 'bg-blue-100 text-blue-700';
-                    } else if (food.source === 'crowd-sourced') {
-                        storeName = 'Verified by users';
-                        storeColor = 'bg-purple-100 text-purple-700';
-                    } else if (food.source === 'manual' || food.source === 'unknown' || !food.source) {
-                        storeName = 'Available at various stores';
-                        storeColor = 'bg-gray-100 text-gray-600';
-                    } else {
-                        // Any other source, capitalize and show it
-                        storeName = food.source.charAt(0).toUpperCase() + food.source.slice(1);
-                        storeColor = 'bg-gray-100 text-gray-700';
-                    }
-
-                    storeHTML = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${storeColor} mt-1">
-                        ${storeIcon}
-                        ${storeName}
-                    </span>`;
-
-                    const foodItem = document.createElement('div');
-                    foodItem.className = 'flex items-center justify-between rounded-lg border border-gray-200 p-4 hover:bg-gray-50 transition';
-                    foodItem.innerHTML = `
-                        <div class="flex-1">
-                            <p class="font-semibold text-gray-900">${cleanName}</p>
-                            <p class="text-sm text-gray-600">${totalGramsText}</p>
-                            ${storeHTML}
-                        </div>
-                        <div class="text-right">
-                            <p class="font-bold text-emerald-600">R${food.cost.toFixed(2)}</p>
-                        </div>
-                    `;
-                    foodsList.appendChild(foodItem);
-                });
-            } else {
-                foodsList.innerHTML = '<p class="text-sm text-gray-500">No food recommendations available.</p>';
-            }
-
-            // Show results
-            document.getElementById('results-state').classList.remove('hidden');
+            // Function will be redefined below with complete weekly meal plan logic
+            // This is just a placeholder that will be overridden
         }
 
-        // Reset form
+        // (Old showResults code removed - see complete implementation below)
         function resetForm() {
             stopPolling();
             document.getElementById('diet-form').classList.remove('hidden');
             document.getElementById('loading-state').classList.add('hidden');
             document.getElementById('results-state').classList.add('hidden');
-            document.getElementById('shopping-summary').classList.add('hidden');
-            document.getElementById('store-info').classList.add('hidden');
             document.getElementById('diet-form').reset();
         }
+
+        // Helper function to format serving sizes
+        function formatServingSize(food) {
+            let totalText = '';
+            if (food.serving_size) {
+                const cleanServingSize = food.serving_size.replace(/\\\//g, '/');
+                const match = cleanServingSize.match(/^(.+?)\s*\((\d+)\s*g\)$/);
+
+                if (match) {
+                    const friendlyUnit = match[1].trim();
+                    const gramsPerServing = parseFloat(match[2]);
+                    const totalGrams = (food.servings * gramsPerServing).toFixed(0);
+
+                    const unitMatch = friendlyUnit.match(/^(\d+\/\d+|\d+\.\d+|\d+)\s+(.+)$/);
+                    if (unitMatch) {
+                        const baseAmount = unitMatch[1].includes('/') ?
+                            (parseFloat(unitMatch[1].split('/')[0]) / parseFloat(unitMatch[1].split('/')[1])) :
+                            parseFloat(unitMatch[1]);
+                        const unit = unitMatch[2];
+                        const totalAmount = food.servings * baseAmount;
+                        const displayAmount = totalAmount % 1 === 0 ? Math.round(totalAmount).toString() : totalAmount.toFixed(1);
+
+                        let pluralUnit = unit;
+                        if (parseFloat(displayAmount) > 1) {
+                            const words = unit.split(' ');
+                            if (words[0] && !words[0].endsWith('s')) {
+                                words[0] = words[0] + 's';
+                            }
+                            pluralUnit = words.join(' ');
+                        }
+                        totalText = `${displayAmount} ${pluralUnit} (${totalGrams}g)`;
+                    } else {
+                        const servingsRounded = food.servings % 1 === 0 ? Math.round(food.servings).toString() : food.servings.toFixed(1);
+                        totalText = `${servingsRounded} ${friendlyUnit}${food.servings > 1 ? 's' : ''} (${totalGrams}g)`;
+                    }
+                } else {
+                    const gramMatch = cleanServingSize.match(/(\d+)\s*g/);
+                    if (gramMatch) {
+                        const gramsPerServing = parseFloat(gramMatch[1]);
+                        const totalGrams = (food.servings * gramsPerServing).toFixed(0);
+                        totalText = `${totalGrams}g`;
+                    } else {
+                        totalText = `${food.servings} servings`;
+                    }
+                }
+            } else {
+                totalText = `${food.servings} servings`;
+            }
+            return totalText;
+        }
+
+        // Helper function to get store badge HTML
+        function getStoreBadge(source) {
+            const storeIcon = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>`;
+
+            let storeName, storeColor;
+            if (source === 'woolworths') {
+                storeName = 'Woolworths';
+                storeColor = 'bg-green-100 text-green-700';
+            } else if (source === 'checkers') {
+                storeName = 'Checkers';
+                storeColor = 'bg-blue-100 text-blue-700';
+            } else if (source === 'crowd-sourced') {
+                storeName = 'Verified';
+                storeColor = 'bg-purple-100 text-purple-700';
+            } else {
+                storeName = 'Various stores';
+                storeColor = 'bg-gray-100 text-gray-600';
+            }
+
+            return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${storeColor}">
+                ${storeIcon} ${storeName}
+            </span>`;
+        }
+
+        // Render weekly shopping list with smart quantities
+        function renderShoppingList(data) {
+            console.log('renderShoppingList called with data:', data);
+            const shoppingList = document.getElementById('weekly-shopping-list');
+            shoppingList.innerHTML = '';
+
+            if (!data.weekly_shopping_list || data.weekly_shopping_list.length === 0) {
+                console.warn('No shopping list items found!');
+                shoppingList.innerHTML = '<p class="text-sm text-gray-500">No shopping items found.</p>';
+                return;
+            }
+
+            console.log('Processing', data.weekly_shopping_list.length, 'shopping items...');
+            data.weekly_shopping_list.forEach(item => {
+                const cleanName = item.name.replace(/\s*\([^)]*\)/g, '').trim();
+                // Use smart_quantity if available, otherwise format servings
+                const quantityText = item.smart_quantity || formatServingSize(item);
+
+                const itemEl = document.createElement('div');
+                itemEl.className = 'flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition';
+                itemEl.innerHTML = `
+                    <div class="flex-1">
+                        <p class="font-medium text-gray-900">${cleanName}</p>
+                        <p class="text-sm text-gray-600">${quantityText}</p>
+                        ${getStoreBadge(item.source)}
+                    </div>
+                    <div class="text-right">
+                        <p class="text-lg font-bold text-emerald-600">R${item.weekly_cost.toFixed(2)}</p>
+                    </div>
+                `;
+                shoppingList.appendChild(itemEl);
+            });
+        }
+
+        // Store daily plans data globally for tab switching
+        let allDailyPlans = [];
+        let currentlySelectedDay = 1;
+
+        // Switch between days
+        function switchDay(dayNumber) {
+            console.log('Switching to day:', dayNumber);
+            currentlySelectedDay = dayNumber;
+
+            // Update tab styles
+            document.querySelectorAll('.day-tab').forEach((tab, idx) => {
+                if (idx + 1 === dayNumber) {
+                    tab.classList.add('text-emerald-600', 'border-emerald-600');
+                    tab.classList.remove('text-gray-700', 'border-transparent');
+                } else {
+                    tab.classList.remove('text-emerald-600', 'border-emerald-600');
+                    tab.classList.add('text-gray-700', 'border-transparent');
+                }
+            });
+
+            // Show/hide day content
+            document.querySelectorAll('[id^="day-content-"]').forEach((content, idx) => {
+                if (idx + 1 === dayNumber) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        // Render all 7 daily meal plans
+        function renderSevenDayPlans(data) {
+            console.log('renderSevenDayPlans called with data:', data);
+            const container = document.getElementById('days-container');
+            container.innerHTML = '';
+
+            if (!data.daily_plans || data.daily_plans.length === 0) {
+                console.warn('No daily plans found!');
+                container.innerHTML = '<p class="text-sm text-gray-500">No daily plans found.</p>';
+                return;
+            }
+
+            console.log('Rendering', data.daily_plans.length, 'daily plans...');
+            allDailyPlans = data.daily_plans;
+
+            // Create a container for each day
+            data.daily_plans.forEach((dayPlan, idx) => {
+                const dayNumber = idx + 1;
+                const dayContainer = document.createElement('div');
+                dayContainer.id = `day-content-${dayNumber}`;
+                dayContainer.className = dayNumber === 1 ? 'space-y-4' : 'space-y-4 hidden';
+
+                // Day header with workout/rest indicator
+                const isWorkoutDay = data.workout_schedule && data.workout_schedule[idx];
+                const dayHeader = document.createElement('div');
+                dayHeader.className = `rounded-lg p-3 ${isWorkoutDay ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 border border-gray-200'}`;
+                dayHeader.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-lg font-bold text-gray-900">${dayPlan.day_name}</h4>
+                        <span class="px-3 py-1 rounded-full text-xs font-medium ${isWorkoutDay ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}">
+                            ${isWorkoutDay ? '💪 Workout Day' : '😌 Rest Day'}
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-1">Target: ${Math.round(data.daily_calories_targets[idx])} kcal</p>
+                `;
+                dayContainer.appendChild(dayHeader);
+
+                // Day macros summary
+                const summary = document.createElement('div');
+                summary.className = 'grid gap-3 sm:grid-cols-3 md:grid-cols-6';
+                summary.innerHTML = `
+                    <div class="rounded-lg bg-white border border-gray-200 p-3">
+                        <p class="text-xs text-gray-600">Cost</p>
+                        <p class="text-xl font-bold text-emerald-600">R${dayPlan.cost.toFixed(2)}</p>
+                    </div>
+                    <div class="rounded-lg bg-white border border-gray-200 p-3">
+                        <p class="text-xs text-gray-600">Calories</p>
+                        <p class="text-xl font-bold text-gray-900">${Math.round(dayPlan.totals.calories)}</p>
+                    </div>
+                    <div class="rounded-lg bg-white border border-gray-200 p-3">
+                        <p class="text-xs text-gray-600">Protein</p>
+                        <p class="text-xl font-bold text-blue-600">${Math.round(dayPlan.totals.protein)}g</p>
+                    </div>
+                    <div class="rounded-lg bg-white border border-gray-200 p-3">
+                        <p class="text-xs text-gray-600">Carbs</p>
+                        <p class="text-xl font-bold text-orange-600">${Math.round(dayPlan.totals.carbs)}g</p>
+                    </div>
+                    <div class="rounded-lg bg-white border border-gray-200 p-3">
+                        <p class="text-xs text-gray-600">Fat</p>
+                        <p class="text-xl font-bold text-yellow-600">${Math.round(dayPlan.totals.fat)}g</p>
+                    </div>
+                    <div class="rounded-lg bg-white border border-gray-200 p-3">
+                        <p class="text-xs text-gray-600">Fiber</p>
+                        <p class="text-xl font-bold text-green-600">${Math.round(dayPlan.totals.fiber)}g</p>
+                    </div>
+                `;
+                dayContainer.appendChild(summary);
+
+                // Foods list
+                const foodsContainer = document.createElement('div');
+                foodsContainer.className = 'space-y-2';
+
+                dayPlan.foods.forEach(food => {
+                    const cleanName = food.name.replace(/\s*\([^)]*\)/g, '').trim();
+                    const totalText = formatServingSize(food);
+
+                    const foodEl = document.createElement('div');
+                    foodEl.className = 'flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition';
+                    foodEl.innerHTML = `
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-900">${cleanName}</p>
+                            <p class="text-sm text-gray-600">${totalText}</p>
+                            ${getStoreBadge(food.source)}
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-gray-700">R${food.cost.toFixed(2)}</p>
+                        </div>
+                    `;
+                    foodsContainer.appendChild(foodEl);
+                });
+
+                dayContainer.appendChild(foodsContainer);
+                container.appendChild(dayContainer);
+            });
+        }
+
+        // Updated showResults to handle weekly data
+        const originalShowResults = showResults;
+        showResults = function(data) {
+            console.log('=== showResults called ===');
+            console.log('Full data object:', data);
+            console.log('Data keys:', Object.keys(data));
+
+            try {
+                // Hide loading state
+                console.log('Hiding loading state...');
+                document.getElementById('loading-state').classList.add('hidden');
+
+                // Update metabolic profile
+                console.log('Updating metabolic profile...');
+                console.log('BMR:', data.bmr, 'TDEE:', data.tdee, 'Avg calories:', data.avg_target_calories);
+                document.getElementById('result-bmr').textContent = Math.round(data.bmr || 0) + ' kcal';
+                document.getElementById('result-tdee').textContent = Math.round(data.tdee || 0) + ' kcal';
+                document.getElementById('result-avg-calories').textContent = Math.round(data.avg_target_calories || data.target_calories || 0) + ' kcal';
+
+                // Update weekly cost
+                console.log('Updating weekly cost:', data.optimal_weekly_cost);
+                document.getElementById('weekly-cost').textContent = 'R' + (data.optimal_weekly_cost || 0).toFixed(2);
+
+                // Render weekly shopping list
+                console.log('Rendering shopping list...');
+                console.log('Shopping list items:', data.weekly_shopping_list ? data.weekly_shopping_list.length : 'undefined');
+                renderShoppingList(data);
+
+                // Render 7-day meal plans
+                console.log('Rendering 7-day plans...');
+                console.log('Daily plans:', data.daily_plans ? data.daily_plans.length : 'undefined');
+                renderSevenDayPlans(data);
+
+                // Show results
+                console.log('Showing results state...');
+                document.getElementById('results-state').classList.remove('hidden');
+                console.log('=== showResults complete ===');
+            } catch (error) {
+                console.error('ERROR in showResults:', error);
+                console.error('Error stack:', error.stack);
+                alert('Error displaying results: ' + error.message);
+            }
+        };
 
         // Cleanup on page unload
         window.addEventListener('beforeunload', function() {
