@@ -1,53 +1,20 @@
-FROM php:8.2-cli
+FROM richarvey/nginx-php-fpm:3.1.6
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    sqlite3 \
-    libsqlite3-dev \
-    nodejs \
-    npm
+COPY . .
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# Image config
+ENV SKIP_COMPOSER 1
+ENV WEBROOT /var/www/html/public
+ENV PHP_ERRORS_STDERR 1
+ENV RUN_SCRIPTS 1
+ENV REAL_IP_HEADER 1
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo pdo_sqlite mbstring exif pcntl bcmath gd
+# Laravel config
+ENV APP_ENV production
+ENV APP_DEBUG false
+ENV LOG_CHANNEL stderr
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Allow composer to run as root
+ENV COMPOSER_ALLOW_SUPERUSER 1
 
-# Set working directory
-WORKDIR /var/www
-
-# Copy application files
-COPY . /var/www
-
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
-
-# Install npm dependencies and build assets
-RUN npm ci --include=dev
-RUN npm run build
-
-# Create SQLite database directory and file
-RUN mkdir -p /var/www/database && \
-    touch /var/www/database/database.sqlite && \
-    chmod -R 775 /var/www/database && \
-    chmod -R 775 /var/www/storage
-
-# Expose port
-EXPOSE 8080
-
-# Start application
-CMD php artisan config:clear && \
-    php artisan cache:clear && \
-    php artisan migrate --force && \
-    php artisan db:seed --class=RealFoodPricesSeeder --force && \
-    php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
+CMD ["/start.sh"]
