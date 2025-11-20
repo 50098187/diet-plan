@@ -1,97 +1,23 @@
-import elytica
-import json
-import sys
+model diet_plan
+set FOODS = getFoodIndices();
+set DAYS = {1,2,3,4,5,6,7};
+set ANIMAL_PROTEINS = getAnimalProteinIndices();
+set PLANT_BASED = getPlantProteinIndices();
 
-def main():
-    # Read data from JSON file (passed as argument 2)
-    if len(sys.argv) < 2:
-        print("ERROR: No data file provided")
-        return 1
+const cost = getCosts(), forall f in FOODS;
+const protein = getProteins(), forall f in FOODS;
+const carbs = getCarbs(), forall f in FOODS;
+const fat = getFats(), forall f in FOODS;
+const calories = getCalories(), forall f in FOODS;
+const fiber = getFibers(), forall f in FOODS;
 
-    data_file = sys.argv[1]
-
-    try:
-        with open(data_file, 'r') as f:
-            data = json.load(f)
-    except Exception as e:
-        print(f"ERROR loading data file: {e}")
-        return 1
-
-    # Extract data
-    foods_data = data['foods']
-    user_data = data['user']
-    metabolic_data = data['metabolic']
-    constraints = data['constraints']
-
-    food_count = len(foods_data)
-
-    # Build HLPL model string
-    indices = list(range(1, food_count + 1))
-    indices_str = '{' + ','.join(map(str, indices)) + '}'
-    day_indices = '{1,2,3,4,5,6,7}'
-
-    # Extract food arrays
-    costs = [f['cost'] for f in foods_data]
-    proteins = [f['protein'] for f in foods_data]
-    carbs = [f['carbs'] for f in foods_data]
-    fats = [f['fat'] for f in foods_data]
-    calories = [f['calories'] for f in foods_data]
-    fibers = [f['fiber'] for f in foods_data]
-    food_names = [f['name'] for f in foods_data]
-    serving_sizes = [f['serving_size'] for f in foods_data]
-    sources = [f['source'] for f in foods_data]
-
-    # Get animal protein indices
-    animal_protein_indices = data.get('animal_protein_indices', [])
-    plant_protein_indices = [i for i in indices if i not in animal_protein_indices]
-
-    # Format arrays for HLPL
-    costs_str = '{' + ', '.join(map(str, costs)) + '}'
-    proteins_str = '{' + ', '.join(map(str, proteins)) + '}'
-    carbs_str = '{' + ', '.join(map(str, carbs)) + '}'
-    fats_str = '{' + ', '.join(map(str, fats)) + '}'
-    calories_str = '{' + ', '.join(map(str, calories)) + '}'
-    fibers_str = '{' + ', '.join(map(str, fibers)) + '}'
-
-    # Daily calorie targets
-    daily_calories_str = '{' + ', '.join(map(str, metabolic_data['daily_calories'])) + '}'
-
-    # Animal protein set
-    animal_protein_set = '{' + ','.join(map(str, animal_protein_indices)) + '}' if animal_protein_indices else '{}'
-    plant_protein_set = '{' + ','.join(map(str, plant_protein_indices)) + '}' if plant_protein_indices else '{}'
-
-    # Build animal protein constraints
-    diet_type = user_data.get('diet_type', 'normal')
-    animal_protein_constraints = ''
-
-    if diet_type == 'normal' and animal_protein_indices:
-        terms = [f"isused_{{{idx},d}}" for idx in animal_protein_indices]
-        sum_expression = ' + '.join(terms)
-        animal_protein_constraints = f"constr {sum_expression} >= 1, forall d in DAYS;\n"
-
-    # Build HLPL model
-    hlpl_model = f"""model diet_plan
-set FOODS = {indices_str};
-set DAYS = {day_indices};
-
-# Food category subsets
-set ANIMAL_PROTEINS = {animal_protein_set};
-set PLANT_BASED = {plant_protein_set};
-
-const cost = {costs_str}, forall f in FOODS;
-const protein = {proteins_str}, forall f in FOODS;
-const carbs = {carbs_str}, forall f in FOODS;
-const fat = {fats_str}, forall f in FOODS;
-const calories = {calories_str}, forall f in FOODS;
-const fiber = {fibers_str}, forall f in FOODS;
-
-const targetcals = {daily_calories_str}, forall d in DAYS;
+const targetcals = getDailyCalories(), forall d in DAYS;
 
 # 2D decision variables: servings and usage for each food on each day
 var 0<=servings<=3, forall f in FOODS, forall d in DAYS;
 bin isused, forall f in FOODS, forall d in DAYS;
 
-# Auxiliary variables for variety constraints (linearization of isused_{{f,d}} * isused_{{f,d+1}})
+# Auxiliary variables for variety constraints (linearization of isused_{f,d} * isused_{f,d+1})
 bin overlap12, forall f in FOODS;
 bin overlap23, forall f in FOODS;
 bin overlap34, forall f in FOODS;
@@ -100,73 +26,119 @@ bin overlap56, forall f in FOODS;
 bin overlap67, forall f in FOODS;
 
 # Minimize total weekly cost
-min sum_{{d in DAYS}}{{sum_{{f in FOODS}}{{cost_{{f}} * servings_{{f,d}}}}}};
+min sum_{d in DAYS}{sum_{f in FOODS}{cost_{f} * servings_{f,d}}};
 
 # Nutritional constraints for EACH day
-constr sum_{{f in FOODS}}{{calories_{{f}} * servings_{{f,d}}}} >= targetcals_{{d}}, forall d in DAYS;
-constr sum_{{f in FOODS}}{{protein_{{f}} * servings_{{f,d}}}} >= {constraints['protein_min']}, forall d in DAYS;
-constr sum_{{f in FOODS}}{{carbs_{{f}} * servings_{{f,d}}}} >= {constraints['carbs_min']}, forall d in DAYS;
-constr sum_{{f in FOODS}}{{carbs_{{f}} * servings_{{f,d}}}} <= {constraints['carbs_max']}, forall d in DAYS;
-constr sum_{{f in FOODS}}{{fat_{{f}} * servings_{{f,d}}}} >= {constraints['fat_min']}, forall d in DAYS;
-constr sum_{{f in FOODS}}{{fat_{{f}} * servings_{{f,d}}}} <= {constraints['fat_max']}, forall d in DAYS;
-constr sum_{{f in FOODS}}{{fiber_{{f}} * servings_{{f,d}}}} >= {constraints['fiber_min']}, forall d in DAYS;
+constr sum_{f in FOODS}{calories_{f} * servings_{f,d}} >= targetcals_{d}, forall d in DAYS;
+constr sum_{f in FOODS}{protein_{f} * servings_{f,d}} >= getProteinMin(), forall d in DAYS;
+constr sum_{f in FOODS}{carbs_{f} * servings_{f,d}} >= getCarbsMin(), forall d in DAYS;
+constr sum_{f in FOODS}{carbs_{f} * servings_{f,d}} <= getCarbsMax(), forall d in DAYS;
+constr sum_{f in FOODS}{fat_{f} * servings_{f,d}} >= getFatMin(), forall d in DAYS;
+constr sum_{f in FOODS}{fat_{f} * servings_{f,d}} <= getFatMax(), forall d in DAYS;
+constr sum_{f in FOODS}{fiber_{f} * servings_{f,d}} >= getFiberMin(), forall d in DAYS;
 
 # Link servings to binary isused variable (BIDIRECTIONAL)
-# If isused = 0, then servings must be 0
-constr servings_{{f,d}} <= 3 * isused_{{f,d}}, forall f in FOODS, forall d in DAYS;
-# If isused = 1, then servings must be >= 0.1 (ensures food is actually used)
-constr servings_{{f,d}} >= 0.1 * isused_{{f,d}}, forall f in FOODS, forall d in DAYS;
+constr servings_{f,d} <= 3 * isused_{f,d}, forall f in FOODS, forall d in DAYS;
+constr servings_{f,d} >= 0.1 * isused_{f,d}, forall f in FOODS, forall d in DAYS;
 
 # Each day must have at least 6 different foods for variety
-constr sum_{{f in FOODS}}{{isused_{{f,d}}}} >= 6, forall d in DAYS;
+constr sum_{f in FOODS}{isused_{f,d}} >= 6, forall d in DAYS;
 
-# Each day must have at least one animal protein (indices in ANIMAL_PROTEINS set above)
-{animal_protein_constraints}
-# Linearization of overlap between consecutive days (overlap = isused_d1 AND isused_d2)
-constr overlap12_{{f}} >= isused_{{f,1}} + isused_{{f,2}} - 1, forall f in FOODS;
-constr overlap12_{{f}} <= isused_{{f,1}}, forall f in FOODS;
-constr overlap12_{{f}} <= isused_{{f,2}}, forall f in FOODS;
+# Each day must have at least one animal protein (only for normal diet)
+constr sum_{f in ANIMAL_PROTEINS}{isused_{f,d}} >= 1, forall d in DAYS;
 
-constr overlap23_{{f}} >= isused_{{f,2}} + isused_{{f,3}} - 1, forall f in FOODS;
-constr overlap23_{{f}} <= isused_{{f,2}}, forall f in FOODS;
-constr overlap23_{{f}} <= isused_{{f,3}}, forall f in FOODS;
+# Linearization of overlap between consecutive days
+constr overlap12_{f} >= isused_{f,1} + isused_{f,2} - 1, forall f in FOODS;
+constr overlap12_{f} <= isused_{f,1}, forall f in FOODS;
+constr overlap12_{f} <= isused_{f,2}, forall f in FOODS;
 
-constr overlap34_{{f}} >= isused_{{f,3}} + isused_{{f,4}} - 1, forall f in FOODS;
-constr overlap34_{{f}} <= isused_{{f,3}}, forall f in FOODS;
-constr overlap34_{{f}} <= isused_{{f,4}}, forall f in FOODS;
+constr overlap23_{f} >= isused_{f,2} + isused_{f,3} - 1, forall f in FOODS;
+constr overlap23_{f} <= isused_{f,2}, forall f in FOODS;
+constr overlap23_{f} <= isused_{f,3}, forall f in FOODS;
 
-constr overlap45_{{f}} >= isused_{{f,4}} + isused_{{f,5}} - 1, forall f in FOODS;
-constr overlap45_{{f}} <= isused_{{f,4}}, forall f in FOODS;
-constr overlap45_{{f}} <= isused_{{f,5}}, forall f in FOODS;
+constr overlap34_{f} >= isused_{f,3} + isused_{f,4} - 1, forall f in FOODS;
+constr overlap34_{f} <= isused_{f,3}, forall f in FOODS;
+constr overlap34_{f} <= isused_{f,4}, forall f in FOODS;
 
-constr overlap56_{{f}} >= isused_{{f,5}} + isused_{{f,6}} - 1, forall f in FOODS;
-constr overlap56_{{f}} <= isused_{{f,5}}, forall f in FOODS;
-constr overlap56_{{f}} <= isused_{{f,6}}, forall f in FOODS;
+constr overlap45_{f} >= isused_{f,4} + isused_{f,5} - 1, forall f in FOODS;
+constr overlap45_{f} <= isused_{f,4}, forall f in FOODS;
+constr overlap45_{f} <= isused_{f,5}, forall f in FOODS;
 
-constr overlap67_{{f}} >= isused_{{f,6}} + isused_{{f,7}} - 1, forall f in FOODS;
-constr overlap67_{{f}} <= isused_{{f,6}}, forall f in FOODS;
-constr overlap67_{{f}} <= isused_{{f,7}}, forall f in FOODS;
+constr overlap56_{f} >= isused_{f,5} + isused_{f,6} - 1, forall f in FOODS;
+constr overlap56_{f} <= isused_{f,5}, forall f in FOODS;
+constr overlap56_{f} <= isused_{f,6}, forall f in FOODS;
 
-# Max 2 foods can overlap between consecutive days (ensures at least 3 different foods)
-constr sum_{{f in FOODS}}{{overlap12_{{f}}}} <= 2;
-constr sum_{{f in FOODS}}{{overlap23_{{f}}}} <= 2;
-constr sum_{{f in FOODS}}{{overlap34_{{f}}}} <= 2;
-constr sum_{{f in FOODS}}{{overlap45_{{f}}}} <= 2;
-constr sum_{{f in FOODS}}{{overlap56_{{f}}}} <= 2;
-constr sum_{{f in FOODS}}{{overlap67_{{f}}}} <= 2;
+constr overlap67_{f} >= isused_{f,6} + isused_{f,7} - 1, forall f in FOODS;
+constr overlap67_{f} <= isused_{f,6}, forall f in FOODS;
+constr overlap67_{f} <= isused_{f,7}, forall f in FOODS;
+
+# Max 2 foods can overlap between consecutive days
+constr sum_{f in FOODS}{overlap12_{f}} <= 2;
+constr sum_{f in FOODS}{overlap23_{f}} <= 2;
+constr sum_{f in FOODS}{overlap34_{f}} <= 2;
+constr sum_{f in FOODS}{overlap45_{f}} <= 2;
+constr sum_{f in FOODS}{overlap56_{f}} <= 2;
+constr sum_{f in FOODS}{overlap67_{f}} <= 2;
 end
-"""
 
-    # Write model to file for Elytica
-    with open('diet_plan_model.hlpl', 'w') as f:
-        f.write(hlpl_model)
+import elytica
+import json
+import sys
 
+# Load data from JSON file (passed as command line argument)
+if len(sys.argv) < 2:
+    print("ERROR: No data file provided")
+    sys.exit(1)
+
+data_file = sys.argv[1]
+
+try:
+    with open(data_file, 'r') as f:
+        data = json.load(f)
+except Exception as e:
+    print(f"ERROR loading data file: {e}")
+    sys.exit(1)
+
+# Extract data sections
+foods_data = data['foods']
+user_data = data['user']
+metabolic_data = data['metabolic']
+constraints = data['constraints']
+animal_protein_indices = data.get('animal_protein_indices', [])
+
+food_count = len(foods_data)
+
+# Define functions that HLPL model calls for loading data
+getFoodIndices = lambda: list(range(1, food_count + 1))
+getAnimalProteinIndices = lambda: animal_protein_indices if user_data.get('diet_type') == 'normal' else []
+getPlantProteinIndices = lambda: [i for i in range(1, food_count + 1) if i not in animal_protein_indices]
+
+# Load food data as dictionaries (HLPL expects {1: value, 2: value, ...})
+getCosts = lambda: {i+1: foods_data[i]['cost'] for i in range(food_count)}
+getProteins = lambda: {i+1: foods_data[i]['protein'] for i in range(food_count)}
+getCarbs = lambda: {i+1: foods_data[i]['carbs'] for i in range(food_count)}
+getFats = lambda: {i+1: foods_data[i]['fat'] for i in range(food_count)}
+getCalories = lambda: {i+1: foods_data[i]['calories'] for i in range(food_count)}
+getFibers = lambda: {i+1: foods_data[i]['fiber'] for i in range(food_count)}
+
+# Load metabolic data
+getDailyCalories = lambda: {i+1: metabolic_data['daily_calories'][i] for i in range(7)}
+
+# Load constraints
+getProteinMin = lambda: constraints['protein_min']
+getCarbsMin = lambda: constraints['carbs_min']
+getCarbsMax = lambda: constraints['carbs_max']
+getFatMin = lambda: constraints['fat_min']
+getFatMax = lambda: constraints['fat_max']
+getFiberMin = lambda: constraints['fiber_min']
+
+def main():
     print("=== DIET OPTIMIZATION MODEL ===")
     print(f"Weight: {user_data['weight']}kg, Height: {user_data['height']}cm, Age: {user_data['age']}")
     print(f"Gender: {user_data['gender']}")
     print(f"Activity Factor: {user_data['activity_factor']}")
     print(f"Goal: {user_data['goal']}")
-    print(f"Diet Type: {diet_type}")
+    print(f"Diet Type: {user_data.get('diet_type', 'normal')}")
     print(f"Average Daily Target: {round(metabolic_data['avg_target_calories'])} kcal")
     print(f"Foods: {food_count}")
 
@@ -246,26 +218,27 @@ end
 
             if servings > 0.01:
                 food_index = i - 1
-                food_cost = servings * costs[food_index]
+                food = foods_data[food_index]
+                food_cost = servings * food['cost']
 
                 food_info = {
-                    "name": food_names[food_index],
+                    "name": food['name'],
                     "servings": round(servings, 2),
-                    "serving_size": serving_sizes[food_index],
+                    "serving_size": food['serving_size'],
                     "cost": round(food_cost, 2),
-                    "source": sources[food_index]
+                    "source": food['source']
                 }
                 day_foods.append(food_info)
                 day_cost += food_cost
 
                 # Update day totals
-                day_totals["protein"] += servings * proteins[food_index]
-                day_totals["carbs"] += servings * carbs[food_index]
-                day_totals["fat"] += servings * fats[food_index]
-                day_totals["calories"] += servings * calories[food_index]
-                day_totals["fiber"] += servings * fibers[food_index]
+                day_totals["protein"] += servings * food['protein']
+                day_totals["carbs"] += servings * food['carbs']
+                day_totals["fat"] += servings * food['fat']
+                day_totals["calories"] += servings * food['calories']
+                day_totals["fiber"] += servings * food['fiber']
 
-                print(f"  {food_names[food_index]}: {round(servings, 2)} servings")
+                print(f"  {food['name']}: {round(servings, 2)} servings")
 
         # Round totals
         for key in day_totals:
@@ -299,7 +272,6 @@ end
                     "source": food["source"]
                 }
             food_weekly_servings[food_key]["servings"] += food["servings"]
-            # Calculate cost per serving (should be consistent)
             food_weekly_servings[food_key]["cost_per_serving"] = food["cost"] / food["servings"]
 
     weekly_shopping_list = []
@@ -315,14 +287,12 @@ end
         smart_quantity = ""
 
         if "slice" in serving_size_lower:
-            # Bread: 1 loaf = ~20 slices
             slices = weekly_servings
-            loaves = int((slices + 19) / 20)  # Round up
+            loaves = int((slices + 19) / 20)
             smart_quantity = f"{loaves} {'loaf' if loaves == 1 else 'loaves'} ({int(slices)} slices)"
 
         elif "egg" in serving_size_lower or "large egg" in serving_size_lower:
-            # Eggs: dozens
-            eggs = int(weekly_servings + 0.5)  # Round
+            eggs = int(weekly_servings + 0.5)
             dozens = eggs // 12
             remainder = eggs % 12
             if dozens > 0 and remainder > 0:
@@ -333,7 +303,6 @@ end
                 smart_quantity = f"{eggs} eggs"
 
         elif "cup" in serving_size_lower or "g" in serving_size_lower:
-            # Weight-based: just show total grams
             import re
             gram_match = re.search(r'(\d+)\s*g', data_item["serving_size"])
             if gram_match:
@@ -348,7 +317,6 @@ end
                 smart_quantity = f"{round(weekly_servings, 1)} servings"
 
         else:
-            # Default: just show servings
             smart_quantity = f"{round(weekly_servings, 1)} servings"
 
         weekly_shopping_list.append({
