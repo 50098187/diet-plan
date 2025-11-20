@@ -120,9 +120,9 @@ class ElyticaService
                 'job_name' => $jobName
             ]);
 
-            // Step 5: Upload JSON data file as {job_id}_data.json (argument 2)
+            // Step 5: Upload JSON data file as data.json (argument 2)
             $dataFileResponse = $this->client->uploadInputFile(
-                $jobId . '_data.json',
+                'data.json',
                 $jsonContent,
                 $this->projectId
             );
@@ -139,7 +139,7 @@ class ElyticaService
                 throw new \Exception('Failed to upload data file - response: ' . json_encode($dataFileResponse));
             }
 
-            Log::info('Uploaded data file as ' . $jobId . '_data.json', [
+            Log::info('Uploaded data file as data.json', [
                 'file_id' => $dataFileId,
                 'job_name' => $jobName
             ]);
@@ -158,7 +158,7 @@ class ElyticaService
                 'arg' => 1
             ]);
 
-            // Step 7: Assign {job_id}_data.json to job as argument 2
+            // Step 7: Assign data.json to job as argument 2
             $this->client->assignFileToJob(
                 $this->projectId,
                 $jobId,
@@ -166,7 +166,7 @@ class ElyticaService
                 2 // Argument 2 - the data file
             );
 
-            Log::info('Assigned ' . $jobId . '_data.json to job', [
+            Log::info('Assigned data.json to job', [
                 'job_id' => $jobId,
                 'file_id' => $dataFileId,
                 'arg' => 2

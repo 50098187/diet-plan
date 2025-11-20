@@ -85,18 +85,15 @@ import elytica
 import json
 import sys
 
-# Load data from JSON file (passed as command line argument)
-if len(sys.argv) < 2:
-    print("ERROR: No data file provided")
-    sys.exit(1)
-
-data_file = sys.argv[1]
+# Load data from JSON file (Elytica places assigned files in working directory)
+data_file = 'data.json'
 
 try:
     with open(data_file, 'r') as f:
         data = json.load(f)
 except Exception as e:
-    print(f"ERROR loading data file: {e}")
+    print(f"ERROR loading data file '{data_file}': {e}")
+    print(f"Working directory: {sys.path}")
     sys.exit(1)
 
 # Extract data sections
