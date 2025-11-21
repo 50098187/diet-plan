@@ -13,6 +13,13 @@ const fiber = getFibers(), forall f in FOODS;
 
 const targetcals = getDailyCalories(), forall d in DAYS;
 
+const proteinmin = getProteinMin();
+const carbsmin = getCarbsMin();
+const carbsmax = getCarbsMax();
+const fatmin = getFatMin();
+const fatmax = getFatMax();
+const fibermin = getFiberMin();
+
 # 2D decision variables: servings and usage for each food on each day
 var 0<=servings<=3, forall f in FOODS, forall d in DAYS;
 bin isused, forall f in FOODS, forall d in DAYS;
@@ -30,12 +37,12 @@ min sum_{d in DAYS}{sum_{f in FOODS}{cost_{f} * servings_{f,d}}};
 
 # Nutritional constraints for EACH day
 constr sum_{f in FOODS}{calories_{f} * servings_{f,d}} >= targetcals_{d}, forall d in DAYS;
-constr sum_{f in FOODS}{protein_{f} * servings_{f,d}} >= getProteinMin(), forall d in DAYS;
-constr sum_{f in FOODS}{carbs_{f} * servings_{f,d}} >= getCarbsMin(), forall d in DAYS;
-constr sum_{f in FOODS}{carbs_{f} * servings_{f,d}} <= getCarbsMax(), forall d in DAYS;
-constr sum_{f in FOODS}{fat_{f} * servings_{f,d}} >= getFatMin(), forall d in DAYS;
-constr sum_{f in FOODS}{fat_{f} * servings_{f,d}} <= getFatMax(), forall d in DAYS;
-constr sum_{f in FOODS}{fiber_{f} * servings_{f,d}} >= getFiberMin(), forall d in DAYS;
+constr sum_{f in FOODS}{protein_{f} * servings_{f,d}} >= proteinmin, forall d in DAYS;
+constr sum_{f in FOODS}{carbs_{f} * servings_{f,d}} >= carbsmin, forall d in DAYS;
+constr sum_{f in FOODS}{carbs_{f} * servings_{f,d}} <= carbsmax, forall d in DAYS;
+constr sum_{f in FOODS}{fat_{f} * servings_{f,d}} >= fatmin, forall d in DAYS;
+constr sum_{f in FOODS}{fat_{f} * servings_{f,d}} <= fatmax, forall d in DAYS;
+constr sum_{f in FOODS}{fiber_{f} * servings_{f,d}} >= fibermin, forall d in DAYS;
 
 # Link servings to binary isused variable (BIDIRECTIONAL)
 constr servings_{f,d} <= 3 * isused_{f,d}, forall f in FOODS, forall d in DAYS;
