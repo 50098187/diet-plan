@@ -19,7 +19,9 @@ class UpdateFoodPackages extends Command
     protected $signature = 'foods:update-packages
                             {--source=all : Update packages for specific source (all, woolworths, checkers)}
                             {--method=scraper : Method to use (scraper, dusk)}
-                            {--force : Force update, skip cache}';
+                            {--force : Force update, skip cache}
+                            {--limit= : Process only this many foods (useful for batching)}
+                            {--skip= : Skip first N foods (useful for batching)}';
 
     /**
      * The console command description.
@@ -30,12 +32,13 @@ class UpdateFoodPackages extends Command
 
     /**
      * Common package size variations to search for (in grams)
+     * Reduced to most common sizes to minimize memory usage and search time
      */
     protected $commonPackageSizes = [
-        'dry_goods' => ['100g', '200g', '250g', '400g', '500g', '750g', '1kg', '2kg'],
-        'meat' => ['150g', '200g', '250g', '300g', '400g', '500g', '1kg'],
-        'produce' => ['100g', '250g', '500g', '1kg'],
-        'dairy' => ['150g', '200g', '250g', '500g', '1kg'],
+        'dry_goods' => ['500g', '1kg', '2kg'],  // Most common bulk sizes
+        'meat' => ['500g', '1kg'],              // Standard meat packages
+        'produce' => ['500g', '1kg'],           // Typical produce bags
+        'dairy' => ['500g', '1kg'],             // Common dairy tubs
     ];
 
     /**
@@ -44,21 +47,48 @@ class UpdateFoodPackages extends Command
     public function handle()
     {
         // Increase memory limit for this command
-        ini_set('memory_limit', '512M');
+        ini_set('memory_limit', '1G');
 
         $source = $this->option('source');
         $method = $this->option('method');
         $force = $this->option('force');
+        $limit = $this->option('limit');
+        $skip = $this->option('skip') ?? 0;
 
         $this->info('Searching for multiple package sizes for each food...');
         $this->info("Method: {$method}");
+        $this->info("Source: {$source}");
         $this->info("Memory limit: " . ini_get('memory_limit'));
+
+        // Build query
+        $query = Food::active();
+
+        if ($skip > 0) {
+            $query->skip($skip);
+        }
+
+        if ($limit) {
+            $query->take($limit);
+        }
+
+        $foods = $query->get();
+        $totalFoods = Food::active()->count();
+
+        $this->newLine();
+        $this->info("Processing {$foods->count()} of {$totalFoods} foods" . ($skip > 0 ? " (skipping first {$skip})" : ""));
         $this->newLine();
 
-        $foods = Food::active()->get();
+        $processed = 0;
+        $failed = 0;
 
-        $this->withProgressBar($foods, function ($food) use ($source, $method, $force) {
-            $this->updateFoodPackages($food, $source, $method, $force);
+        $this->withProgressBar($foods, function ($food) use ($source, $method, $force, &$processed, &$failed) {
+            try {
+                $this->updateFoodPackages($food, $source, $method, $force);
+                $processed++;
+            } catch (\Exception $e) {
+                $failed++;
+                Log::error("Failed to update packages for {$food->name}: {$e->getMessage()}");
+            }
 
             // Force garbage collection after each food to free memory
             gc_collect_cycles();
@@ -66,7 +96,20 @@ class UpdateFoodPackages extends Command
 
         $this->newLine();
         $this->newLine();
-        $this->info('Package update completed!');
+        $this->info("Package update completed!");
+        $this->info("✓ Processed: {$processed}");
+        if ($failed > 0) {
+            $this->warn("✗ Failed: {$failed}");
+        }
+
+        // Show next batch command if there are more foods
+        $remaining = $totalFoods - ($skip + $foods->count());
+        if ($remaining > 0) {
+            $nextSkip = $skip + $foods->count();
+            $this->newLine();
+            $this->comment("📌 {$remaining} foods remaining. To continue, run:");
+            $this->line("   php artisan foods:update-packages --source={$source} --method={$method} --skip={$nextSkip}" . ($limit ? " --limit={$limit}" : ""));
+        }
     }
 
     /**
