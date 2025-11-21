@@ -13,10 +13,7 @@
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
 
     <style>
-        .day-tab.active {
-            color: rgb(5 150 105);
-            border-bottom-color: rgb(5 150 105);
-        }
+        /* Day tab styles are managed via JavaScript */
     </style>
 </head>
 <body class="antialiased">
@@ -73,16 +70,29 @@
 
                 <!-- Form Section -->
                 <div class="rounded-2xl bg-white p-8 shadow-xl lg:col-span-3">
-                    <h2 class="mb-6 text-2xl font-bold text-gray-900" id="form-title">
+                    <h2 class="mb-6 text-3xl font-bold text-gray-900" id="form-title">
                         Get Your Custom Plan
                     </h2>
 
                     <!-- Loading State -->
-                    <div id="loading-state" class="hidden space-y-4">
-                        <div class="flex items-center justify-center py-8">
-                            <div class="h-16 w-16 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600"></div>
+                    <div id="loading-state" class="hidden space-y-6">
+                        <div class="flex flex-col items-center justify-center py-8">
+                            <div class="relative">
+                                <div class="h-20 w-20 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600"></div>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-emerald-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
-                        <p class="text-center text-gray-600" id="loading-message">Calculating your optimal diet plan...</p>
+                        <div class="text-center space-y-2">
+                            <p class="text-lg font-semibold text-gray-900" id="loading-message">Calculating your optimal diet plan...</p>
+                            <p class="text-sm text-gray-600">This may take 30-60 seconds</p>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div class="bg-gradient-to-r from-emerald-500 to-teal-500 h-2 rounded-full animate-pulse"></div>
+                        </div>
                     </div>
 
                     <!-- Results State -->
@@ -130,7 +140,7 @@
 
                             <!-- Day Tabs -->
                             <div class="flex overflow-x-auto border-b border-gray-200 mb-4">
-                                <button id="tab-btn-1" class="day-tab px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600 transition active" onclick="switchDay(1)">
+                                <button id="tab-btn-1" class="day-tab px-4 py-2 text-sm font-medium text-emerald-600 hover:text-emerald-600 border-b-2 border-emerald-600 hover:border-emerald-600 transition" onclick="switchDay(1)">
                                     Monday
                                 </button>
                                 <button id="tab-btn-2" class="day-tab px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-600 border-b-2 border-transparent hover:border-emerald-600 transition" onclick="switchDay(2)">
@@ -169,8 +179,8 @@
 
                         <!-- Weight -->
                         <div>
-                            <label for="weight" class="block text-sm font-medium text-gray-700 mb-2">
-                                Weight (kg)
+                            <label for="weight" class="block text-sm font-semibold text-gray-700 mb-2">
+                                ⚖️ Weight (kg)
                             </label>
                             <input
                                 id="weight"
@@ -180,14 +190,14 @@
                                 required
                                 value="75"
                                 placeholder="e.g., 70"
-                                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                class="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition"
                             />
                         </div>
 
                         <!-- Height -->
                         <div>
-                            <label for="height" class="block text-sm font-medium text-gray-700 mb-2">
-                                Height (cm)
+                            <label for="height" class="block text-sm font-semibold text-gray-700 mb-2">
+                                📏 Height (cm)
                             </label>
                             <input
                                 id="height"
@@ -196,14 +206,14 @@
                                 required
                                 value="175"
                                 placeholder="e.g., 175"
-                                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                class="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition"
                             />
                         </div>
 
                         <!-- Age -->
                         <div>
-                            <label for="age" class="block text-sm font-medium text-gray-700 mb-2">
-                                Age (years)
+                            <label for="age" class="block text-sm font-semibold text-gray-700 mb-2">
+                                🎂 Age (years)
                             </label>
                             <input
                                 id="age"
@@ -212,20 +222,20 @@
                                 required
                                 value="28"
                                 placeholder="e.g., 30"
-                                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                class="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition"
                             />
                         </div>
 
                         <!-- Gender -->
                         <div>
-                            <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">
-                                Gender
+                            <label for="gender" class="block text-sm font-semibold text-gray-700 mb-2">
+                                👤 Gender
                             </label>
                             <select
                                 id="gender"
                                 name="gender"
                                 required
-                                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                class="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition cursor-pointer"
                             >
                                 <option value="" disabled>Select your gender</option>
                                 <option value="male" selected>Male</option>
@@ -235,8 +245,8 @@
 
                         <!-- Activity Factor -->
                         <div>
-                            <label for="activity_factor" class="block text-sm font-medium text-gray-700 mb-3">
-                                Activity Factor
+                            <label for="activity_factor" class="block text-sm font-semibold text-gray-700 mb-3">
+                                💪 Activity Factor
                             </label>
 
                             <!-- Activity Factor Guide Table (Above Selection) -->
@@ -277,7 +287,7 @@
                                 id="activity_factor"
                                 name="activity_factor"
                                 required
-                                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                class="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition cursor-pointer"
                             >
                                 <option value="" disabled>Select your activity level</option>
                                 <option value="sedentary">Sedentary</option>
@@ -290,46 +300,51 @@
 
                         <!-- Goal -->
                         <div>
-                            <label for="goal" class="block text-sm font-medium text-gray-700 mb-2">
-                                Goal
+                            <label for="goal" class="block text-sm font-semibold text-gray-700 mb-2">
+                                🎯 Goal
                             </label>
                             <select
                                 id="goal"
                                 name="goal"
                                 required
-                                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                class="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition cursor-pointer"
                             >
                                 <option value="" disabled>Select your goal</option>
-                                <option value="lose_fat">Lose Fat</option>
-                                <option value="maintain_weight" selected>Maintain Weight</option>
-                                <option value="gain_muscle">Gain Muscle</option>
+                                <option value="lose_fat">🔥 Lose Fat</option>
+                                <option value="maintain_weight" selected>⚖️ Maintain Weight</option>
+                                <option value="gain_muscle">💪 Gain Muscle</option>
                             </select>
                         </div>
 
                         <!-- Diet Type -->
                         <div>
-                            <label for="diet_type" class="block text-sm font-medium text-gray-700 mb-2">
-                                Diet Type
+                            <label for="diet_type" class="block text-sm font-semibold text-gray-700 mb-2">
+                                🥗 Diet Type
                             </label>
                             <select
                                 id="diet_type"
                                 name="diet_type"
                                 required
-                                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                class="w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-3 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition cursor-pointer"
                             >
                                 <option value="" disabled>Select your diet preference</option>
-                                <option value="normal" selected>Normal (includes all foods)</option>
-                                <option value="vegetarian">Vegetarian (no meat, includes dairy & eggs)</option>
-                                <option value="vegan">Vegan (plant-based only)</option>
+                                <option value="normal" selected>🍖 Normal (includes all foods)</option>
+                                <option value="vegetarian">🧀 Vegetarian (no meat, includes dairy & eggs)</option>
+                                <option value="vegan">🌱 Vegan (plant-based only)</option>
                             </select>
                         </div>
 
                         <!-- Submit Button -->
                         <button
                             type="submit"
-                            class="w-full rounded-lg bg-emerald-600 px-6 py-3.5 text-base font-semibold text-white shadow-lg transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                            class="w-full rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 text-lg font-bold text-white shadow-lg transition hover:from-emerald-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98]"
                         >
-                            Generate My Diet Plan
+                            <span class="flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                Generate My Diet Plan
+                            </span>
                         </button>
                     </form>
                 </div>
