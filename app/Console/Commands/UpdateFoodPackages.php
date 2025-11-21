@@ -43,18 +43,25 @@ class UpdateFoodPackages extends Command
      */
     public function handle()
     {
+        // Increase memory limit for this command
+        ini_set('memory_limit', '512M');
+
         $source = $this->option('source');
         $method = $this->option('method');
         $force = $this->option('force');
 
         $this->info('Searching for multiple package sizes for each food...');
         $this->info("Method: {$method}");
+        $this->info("Memory limit: " . ini_get('memory_limit'));
         $this->newLine();
 
         $foods = Food::active()->get();
 
         $this->withProgressBar($foods, function ($food) use ($source, $method, $force) {
             $this->updateFoodPackages($food, $source, $method, $force);
+
+            // Force garbage collection after each food to free memory
+            gc_collect_cycles();
         });
 
         $this->newLine();
@@ -118,10 +125,13 @@ class UpdateFoodPackages extends Command
                     'price_per_gram' => round($result['price'] / $grams, 4),
                     'source' => 'woolworths'
                 ];
-
-                // Rate limit
-                sleep(2);
             }
+
+            // Free memory
+            unset($result);
+
+            // Rate limit
+            sleep(2);
         }
 
         return $packages;
@@ -152,10 +162,13 @@ class UpdateFoodPackages extends Command
                     'price_per_gram' => round($result['price'] / $grams, 4),
                     'source' => 'checkers'
                 ];
-
-                // Rate limit
-                sleep(3);
             }
+
+            // Free memory
+            unset($result);
+
+            // Rate limit
+            sleep(3);
         }
 
         return $packages;
