@@ -47,7 +47,8 @@ class FoodSeeder extends Seeder
                 'energy_kj' => $data[6],
                 'calories' => round($data[6] / 4.184, 2), // Convert kJ to kcal
                 'cost' => $data[7],
-                'price_updated_at' => now(),
+                'source' => 'manual', // Placeholder - will be updated by scrapers
+                'price_updated_at' => null, // No real price yet
                 'is_active' => true,
             ]);
         }
