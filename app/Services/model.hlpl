@@ -136,6 +136,71 @@ getFatMin = lambda: constraints['fat_min']
 getFatMax = lambda: constraints['fat_max']
 getFiberMin = lambda: constraints['fiber_min']
 
+def extract_grams(size_str):
+    """Extract grams from size string (e.g., '400g' => 400, '1kg' => 1000)"""
+    import re
+    kg_match = re.search(r'(\d+(?:\.\d+)?)\s*kg', size_str, re.IGNORECASE)
+    if kg_match:
+        return float(kg_match.group(1)) * 1000
+
+    g_match = re.search(r'(\d+(?:\.\d+)?)\s*g', size_str, re.IGNORECASE)
+    if g_match:
+        return float(g_match.group(1))
+
+    # Default: try to parse as number
+    try:
+        return float(size_str)
+    except:
+        return 0
+
+def calculate_packages_to_buy(packages, grams_needed):
+    """Calculate which packages to buy for required grams"""
+    if not packages or len(packages) == 0:
+        return None
+
+    # Sort packages by size (largest first) for greedy algorithm
+    sorted_pkgs = sorted(packages, key=lambda p: extract_grams(p['size']), reverse=True)
+
+    result_packages = []
+    remaining = grams_needed
+    total_price = 0
+    total_grams = 0
+
+    # Greedy algorithm: buy largest packages first
+    for pkg in sorted_pkgs:
+        pkg_grams = extract_grams(pkg['size'])
+
+        if remaining >= pkg_grams and pkg_grams > 0:
+            quantity = int(remaining // pkg_grams)
+            if quantity > 0:
+                result_packages.append({
+                    'size': pkg['size'],
+                    'quantity': quantity,
+                    'price_each': pkg['price'],
+                    'total_price': quantity * pkg['price']
+                })
+                remaining -= quantity * pkg_grams
+                total_price += quantity * pkg['price']
+                total_grams += quantity * pkg_grams
+
+    # If there's still remaining, buy one more of the smallest package
+    if remaining > 0 and len(sorted_pkgs) > 0:
+        smallest_pkg = sorted_pkgs[-1]
+        result_packages.append({
+            'size': smallest_pkg['size'],
+            'quantity': 1,
+            'price_each': smallest_pkg['price'],
+            'total_price': smallest_pkg['price']
+        })
+        total_price += smallest_pkg['price']
+        total_grams += extract_grams(smallest_pkg['size'])
+
+    return {
+        'packages': result_packages,
+        'total_grams': total_grams,
+        'total_price': round(total_price, 2)
+    }
+
 def main():
     print("=== DIET OPTIMIZATION MODEL ===")
     print(f"Weight: {user_data['weight']}kg, Height: {user_data['height']}cm, Age: {user_data['age']}")
@@ -230,7 +295,8 @@ def main():
                     "servings": round(servings, 2),
                     "serving_size": food['serving_size'],
                     "cost": round(food_cost, 2),
-                    "source": food['source']
+                    "source": food['source'],
+                    "packages": food.get('packages', [])
                 }
                 day_foods.append(food_info)
                 day_cost += food_cost
@@ -273,7 +339,8 @@ def main():
                     "servings": 0,
                     "serving_size": food["serving_size"],
                     "cost_per_serving": 0,
-                    "source": food["source"]
+                    "source": food["source"],
+                    "packages": food.get("packages", [])
                 }
             food_weekly_servings[food_key]["servings"] += food["servings"]
             food_weekly_servings[food_key]["cost_per_serving"] = food["cost"] / food["servings"]
@@ -283,56 +350,99 @@ def main():
 
     for food_name, data_item in food_weekly_servings.items():
         weekly_servings = data_item["servings"]
-        weekly_cost = weekly_servings * data_item["cost_per_serving"]
-        weekly_total_cost += weekly_cost
-
-        # Smart packaging logic
-        serving_size_lower = data_item["serving_size"].lower()
         smart_quantity = ""
+        actual_cost = 0
 
-        if "slice" in serving_size_lower:
-            slices = weekly_servings
-            loaves = int((slices + 19) / 20)
-            smart_quantity = f"{loaves} {'loaf' if loaves == 1 else 'loaves'} ({int(slices)} slices)"
+        # Check if this food has package information
+        packages = data_item.get("packages", [])
 
-        elif "egg" in serving_size_lower or "large egg" in serving_size_lower:
-            eggs = int(weekly_servings + 0.5)
-            dozens = eggs // 12
-            remainder = eggs % 12
-            if dozens > 0 and remainder > 0:
-                smart_quantity = f"{dozens} dozen + {remainder} eggs ({eggs} eggs total)"
-            elif dozens > 0:
-                smart_quantity = f"{dozens} {'dozen' if dozens == 1 else 'dozen'} ({eggs} eggs)"
-            else:
-                smart_quantity = f"{eggs} eggs"
-
-        elif "cup" in serving_size_lower or "g" in serving_size_lower:
+        if packages and len(packages) > 0:
+            # Calculate actual grams needed
             import re
             gram_match = re.search(r'(\d+)\s*g', data_item["serving_size"])
             if gram_match:
                 grams_per_serving = float(gram_match.group(1))
-                total_grams = int(weekly_servings * grams_per_serving)
-                if total_grams >= 1000:
-                    kg = total_grams / 1000
-                    smart_quantity = f"{kg:.1f}kg"
+                total_grams_needed = weekly_servings * grams_per_serving
+
+                # Use package calculation algorithm
+                result = calculate_packages_to_buy(packages, total_grams_needed)
+
+                if result:
+                    actual_cost = result["total_price"]
+                    weekly_total_cost += actual_cost
+
+                    # Format package quantities
+                    pkg_descriptions = []
+                    for pkg in result["packages"]:
+                        qty = int(pkg["quantity"])
+                        if qty > 1:
+                            pkg_descriptions.append(f"{qty}x {pkg['size']}")
+                        else:
+                            pkg_descriptions.append(pkg['size'])
+
+                    smart_quantity = " + ".join(pkg_descriptions)
+                    if result["total_grams"] > total_grams_needed:
+                        smart_quantity += f" ({int(result['total_grams'])}g)"
                 else:
-                    smart_quantity = f"{total_grams}g"
+                    # Fallback if package calculation fails
+                    actual_cost = weekly_servings * data_item["cost_per_serving"]
+                    weekly_total_cost += actual_cost
+                    smart_quantity = f"{int(total_grams_needed)}g"
+            else:
+                # No gram info in serving size
+                actual_cost = weekly_servings * data_item["cost_per_serving"]
+                weekly_total_cost += actual_cost
+                smart_quantity = f"{round(weekly_servings, 1)} servings"
+        else:
+            # No packages - use legacy logic
+            actual_cost = weekly_servings * data_item["cost_per_serving"]
+            weekly_total_cost += actual_cost
+
+            serving_size_lower = data_item["serving_size"].lower()
+
+            if "slice" in serving_size_lower:
+                slices = weekly_servings
+                loaves = int((slices + 19) / 20)
+                smart_quantity = f"{loaves} {'loaf' if loaves == 1 else 'loaves'} ({int(slices)} slices)"
+
+            elif "egg" in serving_size_lower or "large egg" in serving_size_lower:
+                eggs = int(weekly_servings + 0.5)
+                dozens = eggs // 12
+                remainder = eggs % 12
+                if dozens > 0 and remainder > 0:
+                    smart_quantity = f"{dozens} dozen + {remainder} eggs ({eggs} eggs total)"
+                elif dozens > 0:
+                    smart_quantity = f"{dozens} {'dozen' if dozens == 1 else 'dozen'} ({eggs} eggs)"
+                else:
+                    smart_quantity = f"{eggs} eggs"
+
+            elif "cup" in serving_size_lower or "g" in serving_size_lower:
+                import re
+                gram_match = re.search(r'(\d+)\s*g', data_item["serving_size"])
+                if gram_match:
+                    grams_per_serving = float(gram_match.group(1))
+                    total_grams = int(weekly_servings * grams_per_serving)
+                    if total_grams >= 1000:
+                        kg = total_grams / 1000
+                        smart_quantity = f"{kg:.1f}kg"
+                    else:
+                        smart_quantity = f"{total_grams}g"
+                else:
+                    smart_quantity = f"{round(weekly_servings, 1)} servings"
+
             else:
                 smart_quantity = f"{round(weekly_servings, 1)} servings"
-
-        else:
-            smart_quantity = f"{round(weekly_servings, 1)} servings"
 
         weekly_shopping_list.append({
             "name": food_name,
             "weekly_servings": round(weekly_servings, 2),
             "smart_quantity": smart_quantity,
             "serving_size": data_item["serving_size"],
-            "weekly_cost": round(weekly_cost, 2),
+            "weekly_cost": round(actual_cost, 2),
             "source": data_item["source"]
         })
 
-        print(f"  {food_name}: {smart_quantity} - R{round(weekly_cost, 2)}")
+        print(f"  {food_name}: {smart_quantity} - R{round(actual_cost, 2)}")
 
     print(f"\nTotal Weekly Cost: R{round(weekly_total_cost, 2)}")
 

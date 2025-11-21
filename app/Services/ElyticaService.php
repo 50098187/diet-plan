@@ -763,7 +763,8 @@ class ElyticaService
                 'calories' => $calories,
                 'fiber' => (float) $food->fiber,
                 'serving_size' => $food->serving_size,
-                'source' => $food->source ?? 'unknown'
+                'source' => $food->source ?? 'unknown',
+                'packages' => $food->packages ?? [] // Include package information for smart shopping list
             ];
 
             // Check if this food is an animal protein
