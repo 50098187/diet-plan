@@ -10,13 +10,28 @@ namespace App\Data;
 class FoodBasketData
 {
     /**
+     * Cached foods array for performance
+     */
+    private static ?array $cachedFoods = null;
+
+    /**
+     * Validation errors
+     */
+    private static array $validationErrors = [];
+
+    /**
      * Get all food basket items as a constant matrix
+     * Uses in-memory caching for performance
      *
      * @return array
      */
     public static function getFoods(): array
     {
-        return [
+        if (self::$cachedFoods !== null) {
+            return self::$cachedFoods;
+        }
+
+        self::$cachedFoods = [
             // Protein Sources
             [
                 'name' => 'Eggs',
@@ -259,6 +274,8 @@ class FoodBasketData
                 'source' => 'sa_food_basket',
             ],
         ];
+
+        return self::$cachedFoods;
     }
 
     /**
@@ -298,5 +315,71 @@ class FoodBasketData
             }
         }
         return null;
+    }
+
+    /**
+     * Validate the food basket data structure
+     * Ensures all required fields are present and valid
+     *
+     * @return bool
+     */
+    public static function validate(): bool
+    {
+        self::$validationErrors = [];
+        $foods = self::getFoods();
+
+        $requiredFields = ['name', 'serving_size', 'protein', 'carbs', 'fat', 'fiber', 'energy_kj', 'cost', 'source'];
+
+        foreach ($foods as $index => $food) {
+            // Check required fields exist
+            foreach ($requiredFields as $field) {
+                if (!isset($food[$field])) {
+                    self::$validationErrors[] = "Food item #{$index} missing required field: {$field}";
+                }
+            }
+
+            // Validate data types and ranges
+            if (isset($food['protein']) && (!is_numeric($food['protein']) || $food['protein'] < 0)) {
+                self::$validationErrors[] = "Food item #{$index} ({$food['name']}) has invalid protein value";
+            }
+
+            if (isset($food['carbs']) && (!is_numeric($food['carbs']) || $food['carbs'] < 0)) {
+                self::$validationErrors[] = "Food item #{$index} ({$food['name']}) has invalid carbs value";
+            }
+
+            if (isset($food['fat']) && (!is_numeric($food['fat']) || $food['fat'] < 0)) {
+                self::$validationErrors[] = "Food item #{$index} ({$food['name']}) has invalid fat value";
+            }
+
+            if (isset($food['energy_kj']) && (!is_numeric($food['energy_kj']) || $food['energy_kj'] <= 0)) {
+                self::$validationErrors[] = "Food item #{$index} ({$food['name']}) has invalid energy_kj value";
+            }
+
+            if (isset($food['cost']) && (!is_numeric($food['cost']) || $food['cost'] <= 0)) {
+                self::$validationErrors[] = "Food item #{$index} ({$food['name']}) has invalid cost value";
+            }
+        }
+
+        return empty(self::$validationErrors);
+    }
+
+    /**
+     * Get validation errors from last validate() call
+     *
+     * @return array
+     */
+    public static function getValidationErrors(): array
+    {
+        return self::$validationErrors;
+    }
+
+    /**
+     * Clear the cache (useful for testing)
+     *
+     * @return void
+     */
+    public static function clearCache(): void
+    {
+        self::$cachedFoods = null;
     }
 }
