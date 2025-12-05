@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Food;
+use App\Data\FoodBasketData;
 use Elytica\ComputeClient\ComputeService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -700,36 +700,56 @@ class ElyticaService
         // Get diet type preference
         $dietType = $userData['diet_type'] ?? 'normal';
 
-        // ONLY use foods from actual scrapers (woolworths, checkers, crowd-sourced)
-        // DO NOT use placeholder/manual data with R5 prices
-        $query = Food::active()
-            ->whereIn('source', ['woolworths', 'checkers', 'crowd-sourced']);
+        // Get all foods from constant matrix
+        $allFoods = FoodBasketData::getFoods();
 
         // Filter foods based on diet type
+        $foods = [];
         if ($dietType === 'vegan') {
             // Exclude all animal products
-            $animalProducts = ['egg', 'salmon', 'chicken', 'beef', 'liver', 'yogurt', 'fish', 'turkey', 'pork', 'lamb', 'dairy', 'milk', 'cheese'];
-            foreach ($animalProducts as $product) {
-                $query->where('name', 'NOT LIKE', "%{$product}%");
+            $animalProducts = ['egg', 'milk', 'cheese', 'beef', 'fish', 'chicken', 'polony'];
+            foreach ($allFoods as $food) {
+                $nameLower = strtolower($food['name']);
+                $isAnimal = false;
+                foreach ($animalProducts as $product) {
+                    if (strpos($nameLower, $product) !== false) {
+                        $isAnimal = true;
+                        break;
+                    }
+                }
+                if (!$isAnimal) {
+                    $foods[] = $food;
+                }
             }
             Log::info('Applying vegan diet filter - excluding all animal products');
         } elseif ($dietType === 'vegetarian') {
             // Exclude meat and fish, but allow dairy and eggs
-            $meatProducts = ['salmon', 'chicken', 'beef', 'liver', 'fish', 'turkey', 'pork', 'lamb', 'meat'];
-            foreach ($meatProducts as $product) {
-                $query->where('name', 'NOT LIKE', "%{$product}%");
+            $meatProducts = ['beef', 'fish', 'chicken', 'polony'];
+            foreach ($allFoods as $food) {
+                $nameLower = strtolower($food['name']);
+                $isMeat = false;
+                foreach ($meatProducts as $product) {
+                    if (strpos($nameLower, $product) !== false) {
+                        $isMeat = true;
+                        break;
+                    }
+                }
+                if (!$isMeat) {
+                    $foods[] = $food;
+                }
             }
             Log::info('Applying vegetarian diet filter - excluding meat and fish');
+        } else {
+            // For 'normal' diet type, use all foods
+            $foods = $allFoods;
         }
-        // For 'normal' diet type, no filtering needed
 
-        $foods = $query->get();
-        $count = $foods->count();
+        $count = count($foods);
 
-        // Ensure we have real food data
+        // Ensure we have food data
         if ($count === 0) {
-            Log::warning('No store food data found in database for diet type: ' . $dietType);
-            throw new \Exception('No suitable foods available for your diet preference. Please try a different diet type or contact the administrator.');
+            Log::warning('No food data found for diet type: ' . $dietType);
+            throw new \Exception('No suitable foods available for your diet preference. Please try a different diet type.');
         }
 
         Log::info('Generating HLPL model', [
@@ -748,27 +768,28 @@ class ElyticaService
         // Extract food data into array format for JSON
         $foodsArray = [];
         $animalProteinIndices = [];
-        $animalProteinNames = ['egg', 'salmon', 'chicken', 'beef', 'liver', 'yogurt', 'fish', 'turkey', 'pork', 'lamb'];
+        $animalProteinNames = ['egg', 'chicken', 'beef', 'fish', 'polony', 'milk', 'cheese'];
 
         $index = 1; // HLPL indices start at 1
         foreach ($foods as $food) {
-            $calories = round((float) $food->energy_kj / 4.184, 2);
+            $calories = round((float) $food['energy_kj'] / 4.184, 2);
 
             $foodsArray[] = [
-                'name' => $food->name,
-                'cost' => (float) $food->cost,
-                'protein' => (float) $food->protein,
-                'carbs' => (float) $food->carbs,
-                'fat' => (float) $food->fat,
+                'name' => $food['name'],
+                'cost' => (float) $food['cost'],
+                'protein' => (float) $food['protein'],
+                'carbs' => (float) $food['carbs'],
+                'fat' => (float) $food['fat'],
                 'calories' => $calories,
-                'fiber' => (float) $food->fiber,
-                'serving_size' => $food->serving_size,
-                'source' => $food->source ?? 'unknown',
-                'packages' => $food->packages ?? [] // Include package information for smart shopping list
+                'fiber' => (float) $food['fiber'],
+                'serving_size' => $food['serving_size'],
+                'source' => $food['source'] ?? 'sa_food_basket',
+                'package_price' => $food['package_price'] ?? null,
+                'package_size' => $food['package_size'] ?? null
             ];
 
             // Check if this food is an animal protein
-            $nameLower = strtolower($food->name);
+            $nameLower = strtolower($food['name']);
             foreach ($animalProteinNames as $proteinName) {
                 if (strpos($nameLower, $proteinName) !== false) {
                     $animalProteinIndices[] = $index;

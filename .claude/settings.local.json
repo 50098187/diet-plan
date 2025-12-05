@@ -1,7 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(\"C:/Users/simon/.config/herd/bin/php.bat\" artisan tinker --execute=\"echo ''Food count: '' . App\\Models\\Food::count();\")"
+      "Bash(npm run dev:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(cat:*)",
+      "Bash(php artisan:*)",
+      "Bash(git restore:*)",
+      "Bash(test:*)",
+      "Bash(rm:*)",
+      "mcp__elytica__list-applications-tool",
+      "Bash(composer show:*)",
+      "Bash(php -r:*)"
     ],
     "deny": [],
     "ask": []
