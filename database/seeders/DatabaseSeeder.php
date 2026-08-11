@@ -13,6 +13,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Seed NAMC food basket data
+        $this->call(FoodSeeder::class);
+
         // User::factory(10)->create();
 
         User::factory()->create([

@@ -80,7 +80,7 @@ class DietPlanController extends Controller
                 'success' => true,
                 'job_id' => $result['job_id'],
                 'job_name' => $result['job_name'],
-                'message' => 'Your diet plan is being calculated. Please wait...',
+                'message' => 'Your monthly diet plan is being optimised using the NAMC food basket. Please wait...',
             ]);
         } catch (\Exception $e) {
             return response()->json([

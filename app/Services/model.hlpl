@@ -1,98 +1,116 @@
-model diet_plan
-set FOODS = getFoodIndices();
-set DAYS = {1,2,3,4,5,6,7};
-set ANIMAL_PROTEINS = getAnimalProteinIndices();
-set PLANT_BASED = getPlantProteinIndices();
+model namc_diet_optimisation
 
+# ============================================================================
+# HYBRID INTEGER GOAL PROGRAMMING MODEL (FORMULATION 4)
+# Monthly Diet Optimisation Using NAMC Food Basket
+#
+# Based on: 50098187_S_de_Beer_M5.pdf
+# Approach: Hybrid Integer Goal Programming with weighted deviation variables
+# Budget: R2,619/month (50% of SA minimum wage R5,239/month)
+# Food Source: NAMC food basket only
+# ============================================================================
+
+# SETS
+set FOODS = getFoodIndices();
+
+# PARAMETERS (Food Data)
 const cost = getCosts(), forall f in FOODS;
 const protein = getProteins(), forall f in FOODS;
 const carbs = getCarbs(), forall f in FOODS;
 const fat = getFats(), forall f in FOODS;
-const calories = getCalories(), forall f in FOODS;
-const fiber = getFibers(), forall f in FOODS;
+const energy_kj = getEnergyKJ(), forall f in FOODS;
 
-const targetcals = getDailyCalories(), forall d in DAYS;
+# PARAMETERS (Nutritional Targets - Monthly)
+const target_energy = getTargetEnergy();      # Monthly energy requirement (kJ)
+const target_protein = getTargetProtein();    # Monthly protein target (g)
+const target_carbs = getTargetCarbs();        # Monthly carbohydrate target (g)
+const target_fat = getTargetFat();            # Monthly fat target (g)
 
-const proteinmin = getProteinMin();
-const carbsmin = getCarbsMin();
-const carbsmax = getCarbsMax();
-const fatmin = getFatMin();
-const fatmax = getFatMax();
-const fibermin = getFiberMin();
+# PARAMETERS (Constraints)
+const budget_max = getBudgetMax();            # Maximum monthly budget: R2,619
+const min_variety = getMinVariety();          # Minimum variety: 5 different foods
+const max_servings = getMaxServings();        # Maximum servings per food: 5
 
-# 2D decision variables: servings and usage for each food on each day
-var 0<=servings<=3, forall f in FOODS, forall d in DAYS;
-bin isused, forall f in FOODS, forall d in DAYS;
+# PARAMETERS (Weights for Goal Programming)
+const weight_cost = getWeightCost();          # ωC (cost weight - heavily weighted)
+const weight_protein = getWeightProtein();    # ωP (protein weight)
+const weight_carbs = getWeightCarbs();        # ωK (carbohydrate weight)
+const weight_fat = getWeightFat();            # ωA (fat weight)
 
-# Auxiliary variables for variety constraints (linearization of isused_{f,d} * isused_{f,d+1})
-bin overlap12, forall f in FOODS;
-bin overlap23, forall f in FOODS;
-bin overlap34, forall f in FOODS;
-bin overlap45, forall f in FOODS;
-bin overlap56, forall f in FOODS;
-bin overlap67, forall f in FOODS;
+# DECISION VARIABLES
+# Primary: Integer quantities of food items (servings per month)
+int 0<=v<=150, forall f in FOODS;             # νf ∈ Z+ (0-150 servings/month)
 
-# Minimize total weekly cost
-min sum_{d in DAYS}{sum_{f in FOODS}{cost_{f} * servings_{f,d}}};
+# Binary: Food selection indicator
+bin used, forall f in FOODS;                   # 1 if food f is used, 0 otherwise
 
-# Nutritional constraints for EACH day
-constr sum_{f in FOODS}{calories_{f} * servings_{f,d}} >= targetcals_{d}, forall d in DAYS;
-constr sum_{f in FOODS}{protein_{f} * servings_{f,d}} >= proteinmin, forall d in DAYS;
-constr sum_{f in FOODS}{carbs_{f} * servings_{f,d}} >= carbsmin, forall d in DAYS;
-constr sum_{f in FOODS}{carbs_{f} * servings_{f,d}} <= carbsmax, forall d in DAYS;
-constr sum_{f in FOODS}{fat_{f} * servings_{f,d}} >= fatmin, forall d in DAYS;
-constr sum_{f in FOODS}{fat_{f} * servings_{f,d}} <= fatmax, forall d in DAYS;
-constr sum_{f in FOODS}{fiber_{f} * servings_{f,d}} >= fibermin, forall d in DAYS;
+# Deviation Variables for Goal Programming
+var 0<=d_cost_plus<=10000;                     # Positive deviation from budget (dC⁺)
+var 0<=d_protein_plus<=10000;                  # Positive deviation from protein target (dP⁺)
+var 0<=d_protein_minus<=10000;                 # Negative deviation from protein target (dP⁻)
+var 0<=d_carbs_plus<=10000;                    # Positive deviation from carbs target (dK⁺)
+var 0<=d_carbs_minus<=10000;                   # Negative deviation from carbs target (dK⁻)
+var 0<=d_fat_plus<=10000;                      # Positive deviation from fat target (dA⁺)
+var 0<=d_fat_minus<=10000;                     # Negative deviation from fat target (dA⁻)
 
-# Link servings to binary isused variable (BIDIRECTIONAL)
-constr servings_{f,d} <= 3 * isused_{f,d}, forall f in FOODS, forall d in DAYS;
-constr servings_{f,d} >= 0.1 * isused_{f,d}, forall f in FOODS, forall d in DAYS;
+# OBJECTIVE FUNCTION: Minimise weighted sum of deviations
+# Cost is heavily weighted (ωC ≫ ωP, ωK, ωA)
+min weight_cost * d_cost_plus +
+    weight_protein * (d_protein_plus + d_protein_minus) +
+    weight_carbs * (d_carbs_plus + d_carbs_minus) +
+    weight_fat * (d_fat_plus + d_fat_minus);
 
-# Each day must have at least 6 different foods for variety
-constr sum_{f in FOODS}{isused_{f,d}} >= 6, forall d in DAYS;
+# ============================================================================
+# HARD CONSTRAINTS (MUST be satisfied)
+# ============================================================================
 
-# Note: Animal protein constraint removed due to HLPL subset constraint issues
-# The high protein requirement (100g/day) naturally favors animal proteins anyway
+# C1: ENERGY CONSTRAINT (Hard)
+# Total monthly energy must meet or exceed target
+constr sum_{f in FOODS}{energy_kj_{f} * v_{f}} >= target_energy;
 
-# Linearization of overlap between consecutive days
-constr overlap12_{f} >= isused_{f,1} + isused_{f,2} - 1, forall f in FOODS;
-constr overlap12_{f} <= isused_{f,1}, forall f in FOODS;
-constr overlap12_{f} <= isused_{f,2}, forall f in FOODS;
+# C2: BUDGET CONSTRAINT (Hard)
+# Total cost must not exceed budget, with cost deviation tracking
+constr sum_{f in FOODS}{cost_{f} * v_{f}} - d_cost_plus <= budget_max;
 
-constr overlap23_{f} >= isused_{f,2} + isused_{f,3} - 1, forall f in FOODS;
-constr overlap23_{f} <= isused_{f,2}, forall f in FOODS;
-constr overlap23_{f} <= isused_{f,3}, forall f in FOODS;
+# C3: VARIETY CONSTRAINT (Hard)
+# Minimum 5 different foods must be selected
+constr sum_{f in FOODS}{used_{f}} >= min_variety;
 
-constr overlap34_{f} >= isused_{f,3} + isused_{f,4} - 1, forall f in FOODS;
-constr overlap34_{f} <= isused_{f,3}, forall f in FOODS;
-constr overlap34_{f} <= isused_{f,4}, forall f in FOODS;
+# C4: MAXIMUM SERVINGS PER FOOD (Hard)
+# Each food can have maximum 5 servings per month
+constr v_{f} <= max_servings * used_{f}, forall f in FOODS;
 
-constr overlap45_{f} >= isused_{f,4} + isused_{f,5} - 1, forall f in FOODS;
-constr overlap45_{f} <= isused_{f,4}, forall f in FOODS;
-constr overlap45_{f} <= isused_{f,5}, forall f in FOODS;
+# C5: MINIMUM SERVINGS IF USED (Hard)
+# If a food is used, it must have at least 1 serving
+constr v_{f} >= 1 * used_{f}, forall f in FOODS;
 
-constr overlap56_{f} >= isused_{f,5} + isused_{f,6} - 1, forall f in FOODS;
-constr overlap56_{f} <= isused_{f,5}, forall f in FOODS;
-constr overlap56_{f} <= isused_{f,6}, forall f in FOODS;
+# ============================================================================
+# SOFT CONSTRAINTS (Goal Programming with deviation variables)
+# ============================================================================
 
-constr overlap67_{f} >= isused_{f,6} + isused_{f,7} - 1, forall f in FOODS;
-constr overlap67_{f} <= isused_{f,6}, forall f in FOODS;
-constr overlap67_{f} <= isused_{f,7}, forall f in FOODS;
+# C6: PROTEIN GOAL
+# Track deviations from protein target (both above and below)
+constr sum_{f in FOODS}{protein_{f} * v_{f}} - d_protein_plus + d_protein_minus = target_protein;
 
-# Max 2 foods can overlap between consecutive days
-constr sum_{f in FOODS}{overlap12_{f}} <= 2;
-constr sum_{f in FOODS}{overlap23_{f}} <= 2;
-constr sum_{f in FOODS}{overlap34_{f}} <= 2;
-constr sum_{f in FOODS}{overlap45_{f}} <= 2;
-constr sum_{f in FOODS}{overlap56_{f}} <= 2;
-constr sum_{f in FOODS}{overlap67_{f}} <= 2;
+# C7: CARBOHYDRATE GOAL
+# Track deviations from carbohydrate target (both above and below)
+constr sum_{f in FOODS}{carbs_{f} * v_{f}} - d_carbs_plus + d_carbs_minus = target_carbs;
+
+# C8: FAT GOAL
+# Track deviations from fat target (both above and below)
+constr sum_{f in FOODS}{fat_{f} * v_{f}} - d_fat_plus + d_fat_minus = target_fat;
+
 end
+
+# ============================================================================
+# PYTHON DATA LOADING AND PROCESSING
+# ============================================================================
 
 import elytica
 import json
 import sys
 
-# Load data from JSON file (Elytica places assigned files in working directory)
+# Load data from JSON file
 data_file = 'data.json'
 
 try:
@@ -100,7 +118,6 @@ try:
         data = json.load(f)
 except Exception as e:
     print(f"ERROR loading data file '{data_file}': {e}")
-    print(f"Working directory: {sys.path}")
     sys.exit(1)
 
 # Extract data sections
@@ -108,353 +125,229 @@ foods_data = data['foods']
 user_data = data['user']
 metabolic_data = data['metabolic']
 constraints = data['constraints']
-animal_protein_indices = data.get('animal_protein_indices', [])
+weights = data['weights']
 
 food_count = len(foods_data)
 
-# Define functions that HLPL model calls for loading data
-getFoodIndices = lambda: list(range(1, food_count + 1))
-getAnimalProteinIndices = lambda: animal_protein_indices if user_data.get('diet_type') == 'normal' else []
-getPlantProteinIndices = lambda: [i for i in range(1, food_count + 1) if i not in animal_protein_indices]
+print("=== NAMC DIET OPTIMISATION MODEL ===")
+print(f"Budget: R{constraints['budget_max']}/month")
+print(f"Foods available: {food_count}")
+print(f"Variety required: {constraints['min_variety']} different foods")
+print(f"Max servings per food: {constraints['max_servings']}")
+print()
 
-# Load food data as dictionaries (HLPL expects {1: value, 2: value, ...})
+# ============================================================================
+# HLPL DATA LOADING FUNCTIONS
+# ============================================================================
+
+getFoodIndices = lambda: list(range(1, food_count + 1))
+
+# Food data (per unit/serving)
 getCosts = lambda: {i+1: foods_data[i]['cost'] for i in range(food_count)}
 getProteins = lambda: {i+1: foods_data[i]['protein'] for i in range(food_count)}
 getCarbs = lambda: {i+1: foods_data[i]['carbs'] for i in range(food_count)}
 getFats = lambda: {i+1: foods_data[i]['fat'] for i in range(food_count)}
-getCalories = lambda: {i+1: foods_data[i]['calories'] for i in range(food_count)}
-getFibers = lambda: {i+1: foods_data[i]['fiber'] for i in range(food_count)}
+getEnergyKJ = lambda: {i+1: foods_data[i]['energy_kj'] for i in range(food_count)}
 
-# Load metabolic data
-getDailyCalories = lambda: {i+1: metabolic_data['daily_calories'][i] for i in range(7)}
+# Targets (monthly)
+getTargetEnergy = lambda: constraints['target_energy']
+getTargetProtein = lambda: constraints['target_protein']
+getTargetCarbs = lambda: constraints['target_carbs']
+getTargetFat = lambda: constraints['target_fat']
 
-# Load constraints
-getProteinMin = lambda: constraints['protein_min']
-getCarbsMin = lambda: constraints['carbs_min']
-getCarbsMax = lambda: constraints['carbs_max']
-getFatMin = lambda: constraints['fat_min']
-getFatMax = lambda: constraints['fat_max']
-getFiberMin = lambda: constraints['fiber_min']
+# Hard constraints
+getBudgetMax = lambda: constraints['budget_max']
+getMinVariety = lambda: constraints['min_variety']
+getMaxServings = lambda: constraints['max_servings']
 
-def extract_grams(size_str):
-    """Extract grams from size string (e.g., '400g' => 400, '1kg' => 1000)"""
-    import re
-    kg_match = re.search(r'(\d+(?:\.\d+)?)\s*kg', size_str, re.IGNORECASE)
-    if kg_match:
-        return float(kg_match.group(1)) * 1000
+# Weights for goal programming
+getWeightCost = lambda: weights['cost']
+getWeightProtein = lambda: weights['protein']
+getWeightCarbs = lambda: weights['carbs']
+getWeightFat = lambda: weights['fat']
 
-    g_match = re.search(r'(\d+(?:\.\d+)?)\s*g', size_str, re.IGNORECASE)
-    if g_match:
-        return float(g_match.group(1))
-
-    # Default: try to parse as number
-    try:
-        return float(size_str)
-    except:
-        return 0
-
-def calculate_packages_to_buy(packages, grams_needed):
-    """Calculate which packages to buy for required grams"""
-    if not packages or len(packages) == 0:
-        return None
-
-    # Sort packages by size (largest first) for greedy algorithm
-    sorted_pkgs = sorted(packages, key=lambda p: extract_grams(p['size']), reverse=True)
-
-    result_packages = []
-    remaining = grams_needed
-    total_price = 0
-    total_grams = 0
-
-    # Greedy algorithm: buy largest packages first
-    for pkg in sorted_pkgs:
-        pkg_grams = extract_grams(pkg['size'])
-
-        if remaining >= pkg_grams and pkg_grams > 0:
-            quantity = int(remaining // pkg_grams)
-            if quantity > 0:
-                result_packages.append({
-                    'size': pkg['size'],
-                    'quantity': quantity,
-                    'price_each': pkg['price'],
-                    'total_price': quantity * pkg['price']
-                })
-                remaining -= quantity * pkg_grams
-                total_price += quantity * pkg['price']
-                total_grams += quantity * pkg_grams
-
-    # If there's still remaining, buy one more of the smallest package
-    if remaining > 0 and len(sorted_pkgs) > 0:
-        smallest_pkg = sorted_pkgs[-1]
-        result_packages.append({
-            'size': smallest_pkg['size'],
-            'quantity': 1,
-            'price_each': smallest_pkg['price'],
-            'total_price': smallest_pkg['price']
-        })
-        total_price += smallest_pkg['price']
-        total_grams += extract_grams(smallest_pkg['size'])
-
-    return {
-        'packages': result_packages,
-        'total_grams': total_grams,
-        'total_price': round(total_price, 2)
-    }
+# ============================================================================
+# OPTIMISATION EXECUTION
+# ============================================================================
 
 def main():
-    print("=== DIET OPTIMIZATION MODEL ===")
+    print("=== USER PROFILE ===")
     print(f"Weight: {user_data['weight']}kg, Height: {user_data['height']}cm, Age: {user_data['age']}")
     print(f"Gender: {user_data['gender']}")
     print(f"Activity Factor: {user_data['activity_factor']}")
     print(f"Goal: {user_data['goal']}")
-    print(f"Diet Type: {user_data.get('diet_type', 'normal')}")
-    print(f"Average Daily Target: {round(metabolic_data['avg_target_calories'])} kcal")
-    print(f"Foods: {food_count}")
+    print()
 
+    print("=== METABOLIC CALCULATIONS ===")
+    print(f"BMR: {round(metabolic_data['bmr'], 2)} kcal/day")
+    print(f"TDEE: {round(metabolic_data['tdee'], 2)} kcal/day")
+    print(f"Target Energy (Monthly): {round(constraints['target_energy'] / 4184, 2)} kcal")
+    print()
+
+    print("=== WEIGHTS (Goal Programming) ===")
+    print(f"Cost Weight (ωC): {weights['cost']} [heavily weighted]")
+    print(f"Protein Weight (ωP): {weights['protein']}")
+    print(f"Carbs Weight (ωK): {weights['carbs']}")
+    print(f"Fat Weight (ωA): {weights['fat']}")
+    print()
+
+    # Initialise model
+    print("Initialising optimisation model...")
+    try:
+        elytica.init_model("namc_diet_optimisation")
+        print("✓ Model initialised successfully")
+    except Exception as e:
+        print(f"✗ ERROR initialising model: {e}")
+        return 1
+
+    # Set solver parameters
     print("\nSetting solver parameters...")
     try:
-        elytica.set_gap_limit("diet_plan", 0.001)
-        elytica.set_time_limit("diet_plan", 60)
-        print("Solver parameters set successfully")
+        elytica.set_gap_limit("namc_diet_optimisation", 0.001)
+        elytica.set_time_limit("namc_diet_optimisation", 120)
+        print("✓ Solver parameters set")
     except Exception as e:
-        print(f"ERROR setting solver parameters: {e}")
+        print(f"✗ ERROR setting solver parameters: {e}")
         return 1
 
-    print("\nInitializing optimization model...")
+    # Solve optimisation problem
+    print("\nSolving optimisation problem...")
     try:
-        elytica.init_model("diet_plan")
-        print("Model initialized successfully")
+        elytica.run_model("namc_diet_optimisation")
+        print("✓ Model solved successfully")
     except Exception as e:
-        print(f"ERROR initializing model: {e}")
+        print(f"✗ ERROR solving model: {e}")
         return 1
 
-    print("\nSolving optimization problem...")
+    # Get objective value (weighted sum of deviations)
+    print("\nRetrieving optimal solution...")
     try:
-        elytica.run_model("diet_plan")
-        print("Model solved successfully")
+        objective_value = elytica.get_best_primal_bound("namc_diet_optimisation")
+        print(f"Objective Value (Weighted Deviations): {round(objective_value, 2)}")
     except Exception as e:
-        print(f"ERROR solving model: {e}")
+        print(f"✗ ERROR getting objective value: {e}")
         return 1
 
-    print("\nGetting optimal solution...")
-    try:
-        optimal_cost = elytica.get_best_primal_bound("diet_plan")
-        print(f"Optimal cost: R{round(optimal_cost, 2)}")
-    except Exception as e:
-        print(f"ERROR getting optimal cost: {e}")
-        return 1
+    # ========================================================================
+    # EXTRACT SOLUTION
+    # ========================================================================
 
-    # Extract 7-day optimal diet
-    print("\n=== METABOLIC CALCULATIONS ===")
-    print(f"BMR: {round(metabolic_data['bmr'])} kcal")
-    print(f"BMR Adjusted: {round(metabolic_data['bmr2'])} kcal")
-    print(f"TDEE: {round(metabolic_data['tdee'])} kcal")
-    print(f"Average Target: {round(metabolic_data['avg_target_calories'])} kcal")
-    print(f"Weekly Cost: R{round(optimal_cost, 2)}")
+    print("\n=== OPTIMAL MONTHLY DIET PLAN ===")
 
-    # Initialize results structure
+    selected_foods = []
+    total_cost = 0
+    total_protein = 0
+    total_carbs = 0
+    total_fat = 0
+    total_energy_kj = 0
+
+    # Extract decision variables
+    for i in range(1, food_count + 1):
+        var_name = f"v{i}"
+        servings = elytica.get_variable_value("namc_diet_optimisation", var_name)
+
+        if servings >= 0.01:  # Tolerance for rounding
+            food_index = i - 1
+            food = foods_data[food_index]
+
+            servings_int = int(round(servings))
+            food_cost = servings_int * food['cost']
+            food_protein = servings_int * food['protein']
+            food_carbs = servings_int * food['carbs']
+            food_fat = servings_int * food['fat']
+            food_energy = servings_int * food['energy_kj']
+
+            selected_foods.append({
+                'name': food['name'],
+                'category': food.get('category', 'Uncategorised'),
+                'servings': servings_int,
+                'cost': round(food_cost, 2),
+                'protein': round(food_protein, 2),
+                'carbs': round(food_carbs, 2),
+                'fat': round(food_fat, 2),
+                'energy_kj': round(food_energy, 2)
+            })
+
+            total_cost += food_cost
+            total_protein += food_protein
+            total_carbs += food_carbs
+            total_fat += food_fat
+            total_energy_kj += food_energy
+
+            print(f"{food['name']}: {servings_int} servings @ R{round(food_cost, 2)}")
+
+    # Extract deviation variables
+    d_cost_plus = elytica.get_variable_value("namc_diet_optimisation", "d_cost_plus")
+    d_protein_plus = elytica.get_variable_value("namc_diet_optimisation", "d_protein_plus")
+    d_protein_minus = elytica.get_variable_value("namc_diet_optimisation", "d_protein_minus")
+    d_carbs_plus = elytica.get_variable_value("namc_diet_optimisation", "d_carbs_plus")
+    d_carbs_minus = elytica.get_variable_value("namc_diet_optimisation", "d_carbs_minus")
+    d_fat_plus = elytica.get_variable_value("namc_diet_optimisation", "d_fat_plus")
+    d_fat_minus = elytica.get_variable_value("namc_diet_optimisation", "d_fat_minus")
+
+    print("\n=== MONTHLY TOTALS ===")
+    print(f"Total Cost: R{round(total_cost, 2)} / R{constraints['budget_max']} (Budget)")
+    print(f"Total Energy: {round(total_energy_kj, 2)} kJ ({round(total_energy_kj / 4.184, 2)} kcal)")
+    print(f"Total Protein: {round(total_protein, 2)}g (Target: {round(constraints['target_protein'], 2)}g)")
+    print(f"Total Carbs: {round(total_carbs, 2)}g (Target: {round(constraints['target_carbs'], 2)}g)")
+    print(f"Total Fat: {round(total_fat, 2)}g (Target: {round(constraints['target_fat'], 2)}g)")
+    print(f"Variety: {len(selected_foods)} different foods")
+
+    print("\n=== DEVIATIONS (Goal Programming) ===")
+    print(f"Cost Deviation (dC⁺): R{round(d_cost_plus, 2)}")
+    print(f"Protein Deviation (dP⁺): {round(d_protein_plus, 2)}g above target")
+    print(f"Protein Deviation (dP⁻): {round(d_protein_minus, 2)}g below target")
+    print(f"Carbs Deviation (dK⁺): {round(d_carbs_plus, 2)}g above target")
+    print(f"Carbs Deviation (dK⁻): {round(d_carbs_minus, 2)}g below target")
+    print(f"Fat Deviation (dA⁺): {round(d_fat_plus, 2)}g above target")
+    print(f"Fat Deviation (dA⁻): {round(d_fat_minus, 2)}g below target")
+
+    # Build results JSON
     results = {
-        "optimal_weekly_cost": round(optimal_cost, 2),
-        "bmr": round(metabolic_data['bmr'], 2),
-        "bmr_adjusted": round(metabolic_data['bmr2'], 2),
-        "tdee": round(metabolic_data['tdee'], 2),
-        "avg_target_calories": round(metabolic_data['avg_target_calories'], 2),
-        "daily_calories_targets": metabolic_data['daily_calories'],
-        "workout_schedule": metabolic_data['workout_schedule'],
-        "day_names": metabolic_data['day_names'],
-        "daily_plans": []
+        'objective_value': round(objective_value, 2),
+        'total_cost': round(total_cost, 2),
+        'budget_max': constraints['budget_max'],
+        'selected_foods': selected_foods,
+        'totals': {
+            'energy_kj': round(total_energy_kj, 2),
+            'energy_kcal': round(total_energy_kj / 4.184, 2),
+            'protein': round(total_protein, 2),
+            'carbs': round(total_carbs, 2),
+            'fat': round(total_fat, 2)
+        },
+        'targets': {
+            'energy_kj': constraints['target_energy'],
+            'protein': constraints['target_protein'],
+            'carbs': constraints['target_carbs'],
+            'fat': constraints['target_fat']
+        },
+        'deviations': {
+            'cost_plus': round(d_cost_plus, 2),
+            'protein_plus': round(d_protein_plus, 2),
+            'protein_minus': round(d_protein_minus, 2),
+            'carbs_plus': round(d_carbs_plus, 2),
+            'carbs_minus': round(d_carbs_minus, 2),
+            'fat_plus': round(d_fat_plus, 2),
+            'fat_minus': round(d_fat_minus, 2)
+        },
+        'variety_count': len(selected_foods),
+        'metabolic': {
+            'bmr': round(metabolic_data['bmr'], 2),
+            'tdee': round(metabolic_data['tdee'], 2)
+        },
+        'user': user_data
     }
 
-    # Extract meal plan for each day
-    for day in range(1, 8):
-        day_name = metabolic_data['day_names'][day - 1]
-        print(f"\n=== {day_name.upper()} (Day {day}) ===")
-
-        day_foods = []
-        day_totals = {
-            "calories": 0,
-            "protein": 0,
-            "carbs": 0,
-            "fat": 0,
-            "fiber": 0
-        }
-        day_cost = 0
-
-        # Extract servings for each food on this day
-        for i in range(1, food_count + 1):
-            var_name = f"servings{i},{day}"
-            servings = elytica.get_variable_value("diet_plan", var_name)
-
-            if servings > 0.01:
-                food_index = i - 1
-                food = foods_data[food_index]
-                food_cost = servings * food['cost']
-
-                food_info = {
-                    "name": food['name'],
-                    "servings": round(servings, 2),
-                    "serving_size": food['serving_size'],
-                    "cost": round(food_cost, 2),
-                    "source": food['source'],
-                    "packages": food.get('packages', [])
-                }
-                day_foods.append(food_info)
-                day_cost += food_cost
-
-                # Update day totals
-                day_totals["protein"] += servings * food['protein']
-                day_totals["carbs"] += servings * food['carbs']
-                day_totals["fat"] += servings * food['fat']
-                day_totals["calories"] += servings * food['calories']
-                day_totals["fiber"] += servings * food['fiber']
-
-                print(f"  {food['name']}: {round(servings, 2)} servings")
-
-        # Round totals
-        for key in day_totals:
-            day_totals[key] = round(day_totals[key], 2)
-
-        print(f"  Cost: R{round(day_cost, 2)}")
-        print(f"  Calories: {round(day_totals['calories'])} | Protein: {round(day_totals['protein'])}g | Carbs: {round(day_totals['carbs'])}g")
-
-        # Add to results
-        results["daily_plans"].append({
-            "day": day,
-            "day_name": day_name,
-            "foods": day_foods,
-            "totals": day_totals,
-            "cost": round(day_cost, 2)
-        })
-
-    # Generate weekly shopping list by summing all days
-    print("\n=== GENERATING WEEKLY SHOPPING LIST ===")
-    food_weekly_servings = {}  # food_name -> total servings
-
-    # Sum servings across all days
-    for day_plan in results["daily_plans"]:
-        for food in day_plan["foods"]:
-            food_key = food["name"]
-            if food_key not in food_weekly_servings:
-                food_weekly_servings[food_key] = {
-                    "servings": 0,
-                    "serving_size": food["serving_size"],
-                    "cost_per_serving": 0,
-                    "source": food["source"],
-                    "packages": food.get("packages", [])
-                }
-            food_weekly_servings[food_key]["servings"] += food["servings"]
-            food_weekly_servings[food_key]["cost_per_serving"] = food["cost"] / food["servings"]
-
-    weekly_shopping_list = []
-    weekly_total_cost = 0
-
-    for food_name, data_item in food_weekly_servings.items():
-        weekly_servings = data_item["servings"]
-        smart_quantity = ""
-        actual_cost = 0
-
-        # Check if this food has package information
-        packages = data_item.get("packages", [])
-
-        if packages and len(packages) > 0:
-            # Calculate actual grams needed
-            import re
-            gram_match = re.search(r'(\d+)\s*g', data_item["serving_size"])
-            if gram_match:
-                grams_per_serving = float(gram_match.group(1))
-                total_grams_needed = weekly_servings * grams_per_serving
-
-                # Use package calculation algorithm
-                result = calculate_packages_to_buy(packages, total_grams_needed)
-
-                if result:
-                    actual_cost = result["total_price"]
-                    weekly_total_cost += actual_cost
-
-                    # Format package quantities
-                    pkg_descriptions = []
-                    for pkg in result["packages"]:
-                        qty = int(pkg["quantity"])
-                        if qty > 1:
-                            pkg_descriptions.append(f"{qty}x {pkg['size']}")
-                        else:
-                            pkg_descriptions.append(pkg['size'])
-
-                    smart_quantity = " + ".join(pkg_descriptions)
-                    if result["total_grams"] > total_grams_needed:
-                        smart_quantity += f" ({int(result['total_grams'])}g)"
-                else:
-                    # Fallback if package calculation fails
-                    actual_cost = weekly_servings * data_item["cost_per_serving"]
-                    weekly_total_cost += actual_cost
-                    smart_quantity = f"{int(total_grams_needed)}g"
-            else:
-                # No gram info in serving size
-                actual_cost = weekly_servings * data_item["cost_per_serving"]
-                weekly_total_cost += actual_cost
-                smart_quantity = f"{round(weekly_servings, 1)} servings"
-        else:
-            # No packages - use legacy logic
-            actual_cost = weekly_servings * data_item["cost_per_serving"]
-            weekly_total_cost += actual_cost
-
-            serving_size_lower = data_item["serving_size"].lower()
-
-            if "slice" in serving_size_lower:
-                slices = weekly_servings
-                loaves = int((slices + 19) / 20)
-                smart_quantity = f"{loaves} {'loaf' if loaves == 1 else 'loaves'} ({int(slices)} slices)"
-
-            elif "egg" in serving_size_lower or "large egg" in serving_size_lower:
-                eggs = int(weekly_servings + 0.5)
-                dozens = eggs // 12
-                remainder = eggs % 12
-                if dozens > 0 and remainder > 0:
-                    smart_quantity = f"{dozens} dozen + {remainder} eggs ({eggs} eggs total)"
-                elif dozens > 0:
-                    smart_quantity = f"{dozens} {'dozen' if dozens == 1 else 'dozen'} ({eggs} eggs)"
-                else:
-                    smart_quantity = f"{eggs} eggs"
-
-            elif "cup" in serving_size_lower or "g" in serving_size_lower:
-                import re
-                gram_match = re.search(r'(\d+)\s*g', data_item["serving_size"])
-                if gram_match:
-                    grams_per_serving = float(gram_match.group(1))
-                    total_grams = int(weekly_servings * grams_per_serving)
-                    if total_grams >= 1000:
-                        kg = total_grams / 1000
-                        smart_quantity = f"{kg:.1f}kg"
-                    else:
-                        smart_quantity = f"{total_grams}g"
-                else:
-                    smart_quantity = f"{round(weekly_servings, 1)} servings"
-
-            else:
-                smart_quantity = f"{round(weekly_servings, 1)} servings"
-
-        weekly_shopping_list.append({
-            "name": food_name,
-            "weekly_servings": round(weekly_servings, 2),
-            "smart_quantity": smart_quantity,
-            "serving_size": data_item["serving_size"],
-            "weekly_cost": round(actual_cost, 2),
-            "source": data_item["source"]
-        })
-
-        print(f"  {food_name}: {smart_quantity} - R{round(actual_cost, 2)}")
-
-    print(f"\nTotal Weekly Cost: R{round(weekly_total_cost, 2)}")
-
-    # Add weekly data to results
-    results["optimal_weekly_cost"] = round(weekly_total_cost, 2)
-    results["weekly_shopping_list"] = weekly_shopping_list
-
+    # Write results
     results_json = json.dumps(results, indent=2)
     print("\n=== WRITING RESULTS ===")
     print(results_json)
 
     elytica.write_results(results_json)
-    print("Results written successfully")
+    print("\n✓ Results written successfully")
 
     return 0
+
+# Run main
+if __name__ == "__main__":
+    sys.exit(main())

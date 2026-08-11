@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Optimize Your Diet - DietPlan</title>
+    <title>Optimise Your Diet - DietPlan</title>
 
     <!-- Vite CSS -->
     @vite('resources/css/app.css')
@@ -37,12 +37,12 @@
                     </div>
 
                     <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
-                        Optimize Your Diet, <br>
-                        <span class="text-emerald-600">Minimize Your Cost</span>
+                        Optimise Your Diet, <br>
+                        <span class="text-emerald-600">Minimise Your Cost</span>
                     </h1>
 
                     <p class="text-lg text-gray-600">
-                        Get a personalized, budget-friendly meal plan based on your fitness goals. This advanced optimization model creates the perfect nutrition strategy tailored to your body and objectives.
+                        Get a personalised, budget-friendly meal plan based on your fitness goals. This advanced optimisation model creates the perfect nutrition strategy tailored to your body and objectives.
                     </p>
 
                     <!-- Features List -->
@@ -51,13 +51,13 @@
                             <svg class="mt-1 h-5 w-5 flex-shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            <span class="text-gray-700">Personalized macronutrient targets</span>
+                            <span class="text-gray-700">Personalised macronutrient targets</span>
                         </div>
                         <div class="flex items-start gap-3">
                             <svg class="mt-1 h-5 w-5 flex-shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            <span class="text-gray-700">Cost-optimized meal suggestions</span>
+                            <span class="text-gray-700">Cost-optimised meal suggestions</span>
                         </div>
                         <div class="flex items-start gap-3">
                             <svg class="mt-1 h-5 w-5 flex-shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,7 +136,7 @@
                         <!-- 7-Day Meal Plans -->
                         <div class="rounded-lg bg-white p-6 shadow-lg border border-gray-200">
                             <h3 class="text-xl font-bold text-gray-900 mb-4">📋 7-Day Meal Plans</h3>
-                            <p class="mb-4 text-sm text-gray-600">Each day has a unique optimized meal plan with variety:</p>
+                            <p class="mb-4 text-sm text-gray-600">Each day has a unique optimised meal plan with variety:</p>
 
                             <!-- Day Tabs -->
                             <div class="flex overflow-x-auto border-b border-gray-200 mb-4">
@@ -370,7 +370,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <h3 class="mb-2 text-lg font-semibold text-gray-900">Budget Optimized</h3>
+                    <h3 class="mb-2 text-lg font-semibold text-gray-900">Budget Optimised</h3>
                     <p class="text-sm text-gray-600">
                         Our algorithm finds the most cost-effective foods that meet your nutritional requirements.
                     </p>
@@ -393,7 +393,7 @@
         <!-- Footer -->
         <footer class="mt-20 border-t border-gray-200 py-8">
             <div class="mx-auto max-w-7xl px-6 text-center text-sm text-gray-600 lg:px-8">
-                Built with smart optimization algorithms to help you achieve your fitness goals affordably.
+                Built with smart optimisation algorithms to help you achieve your fitness goals affordably.
             </div>
         </footer>
     </div>
