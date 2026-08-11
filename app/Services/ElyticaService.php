@@ -273,8 +273,14 @@ class ElyticaService
             Log::info('Fetching Elytica projects to find or create project');
             $projects = $this->client->getProjects();
 
+            Log::info('Projects API response', [
+                'type' => gettype($projects),
+                'is_null' => is_null($projects),
+                'is_iterable' => is_iterable($projects)
+            ]);
+
+            // Try to find existing project if getProjects returned data
             if ($projects && is_iterable($projects)) {
-                // Try to find existing project
                 foreach ($projects as $project) {
                     if (isset($project->name) && $project->name === $this->projectName) {
                         $this->projectId = (int) $project->id;
@@ -282,28 +288,35 @@ class ElyticaService
                         return;
                     }
                 }
+            }
 
-                // Create new project if not found
-                Log::info('Creating new Elytica project', ['project_name' => $this->projectName, 'application_id' => $this->applicationId]);
+            // If we get here, either:
+            // 1. getProjects returned null (no projects exist), OR
+            // 2. No matching project was found
+            // In both cases, create a new project
+            Log::info('Creating new Elytica project', [
+                'project_name' => $this->projectName,
+                'application_id' => $this->applicationId,
+                'reason' => is_null($projects) ? 'No projects exist' : 'No matching project found'
+            ]);
 
-                $response = $this->client->createNewProject(
-                    $this->projectName,
-                    'NAMC Diet Optimisation Project - Monthly Budget Optimization',
-                    $this->applicationId,
-                    null,
-                    null
-                );
+            $response = $this->client->createNewProject(
+                $this->projectName,
+                'NAMC Diet Optimisation Project - Monthly Budget Optimization',
+                $this->applicationId,
+                null,
+                null
+            );
 
-                if ($response && isset($response->id)) {
-                    $this->projectId = (int) $response->id;
-                    Log::info('Created new project successfully', ['project_id' => $this->projectId]);
-                } else {
-                    Log::error('Failed to create project - no ID in response', ['response' => json_encode($response)]);
-                    throw new \Exception('Failed to create Elytica project - invalid response from server');
-                }
+            if ($response && isset($response->id)) {
+                $this->projectId = (int) $response->id;
+                Log::info('Created new project successfully', ['project_id' => $this->projectId]);
+
+                // Save the project ID to .env for future use
+                Log::info('Tip: Add ELYTICA_PROJECT_ID=' . $this->projectId . ' to your .env file to skip project lookup');
             } else {
-                Log::error('Failed to get projects list from Elytica');
-                throw new \Exception('Could not retrieve projects from Elytica');
+                Log::error('Failed to create project - no ID in response', ['response' => json_encode($response)]);
+                throw new \Exception('Failed to create Elytica project - invalid response from server');
             }
         } catch (\Exception $e) {
             Log::error('Error in ensureProjectExists', [
