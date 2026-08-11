@@ -1,18 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run dev:*)",
+      "Bash(\"C:\\Users\\simon\\.config\\herd\\bin\\php.bat\" test_v2.php)",
+      "Bash(git fetch:*)",
+      "Bash(\"C:\\Users\\simon\\.config\\herd\\bin\\php.bat\" artisan db:seed --class=FoodSeeder)",
       "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push)",
-      "Bash(cat:*)",
-      "Bash(php artisan:*)",
-      "Bash(git restore:*)",
-      "Bash(test:*)",
-      "Bash(rm:*)",
-      "mcp__elytica__list-applications-tool",
-      "Bash(composer show:*)",
-      "Bash(php -r:*)"
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

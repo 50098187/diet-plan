@@ -26,15 +26,8 @@ class ElyticaService
         $this->client = new ComputeService($token);
         $this->modelPath = base_path(env('ELYTICA_MODEL_PATH', 'app/Services/model.hlpl'));
 
-        // Try to ensure project exists
-        try {
-            $this->ensureProjectExists();
-        } catch (\Exception $e) {
-            Log::warning('Could not ensure project exists during initialisation', [
-                'error' => $e->getMessage()
-            ]);
-            $this->projectId = (int) env('ELYTICA_PROJECT_ID');
-        }
+        // Note: Project will be ensured when creating a job (lazy loading)
+        $this->projectId = (int) env('ELYTICA_PROJECT_ID');
     }
 
     /**
@@ -47,8 +40,13 @@ class ElyticaService
     public function createJob(string $jobName, array $modelData): array
     {
         try {
+            // Ensure project exists before creating job
             if (!$this->projectId) {
-                throw new \Exception('Project ID not found. Cannot create job.');
+                $this->ensureProjectExists();
+
+                if (!$this->projectId) {
+                    throw new \Exception('Could not find or create Elytica project. Please check your Elytica token and try again.');
+                }
             }
 
             // Step 1: Create the job
@@ -272,21 +270,25 @@ class ElyticaService
         }
 
         try {
+            Log::info('Fetching Elytica projects to find or create project');
             $projects = $this->client->getProjects();
 
             if ($projects && is_iterable($projects)) {
+                // Try to find existing project
                 foreach ($projects as $project) {
                     if (isset($project->name) && $project->name === $this->projectName) {
                         $this->projectId = (int) $project->id;
-                        Log::info('Found existing project', ['project_id' => $this->projectId]);
+                        Log::info('Found existing project', ['project_id' => $this->projectId, 'project_name' => $this->projectName]);
                         return;
                     }
                 }
 
-                // Create new project
+                // Create new project if not found
+                Log::info('Creating new Elytica project', ['project_name' => $this->projectName, 'application_id' => $this->applicationId]);
+
                 $response = $this->client->createNewProject(
                     $this->projectName,
-                    'NAMC Diet Optimisation Project',
+                    'NAMC Diet Optimisation Project - Monthly Budget Optimization',
                     $this->applicationId,
                     null,
                     null
@@ -294,11 +296,21 @@ class ElyticaService
 
                 if ($response && isset($response->id)) {
                     $this->projectId = (int) $response->id;
-                    Log::info('Created new project', ['project_id' => $this->projectId]);
+                    Log::info('Created new project successfully', ['project_id' => $this->projectId]);
+                } else {
+                    Log::error('Failed to create project - no ID in response', ['response' => json_encode($response)]);
+                    throw new \Exception('Failed to create Elytica project - invalid response from server');
                 }
+            } else {
+                Log::error('Failed to get projects list from Elytica');
+                throw new \Exception('Could not retrieve projects from Elytica');
             }
         } catch (\Exception $e) {
-            Log::error('Error in ensureProjectExists', ['error' => $e->getMessage()]);
+            Log::error('Error in ensureProjectExists', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
     }
 

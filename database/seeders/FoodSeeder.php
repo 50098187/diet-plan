@@ -32,25 +32,42 @@ class FoodSeeder extends Seeder
         fgets($file); // ;;;Protein...
 
         $count = 0;
+        $skipped = 0;
+        $lastCategory = '';
 
         while (($row = fgetcsv($file, 0, ';')) !== false) {
+            // Debug: show what we're processing
+            if (empty($row[0]) && !empty($lastCategory)) {
+                // Use last category if current category is empty
+                $category = $lastCategory;
+            } else {
+                $category = trim($row[0] ?? '');
+                if (!empty($category)) {
+                    $lastCategory = $category;
+                }
+            }
+
+            $product = trim($row[1] ?? '');
+
             // Skip empty rows and total rows
-            if (empty($row[0]) || empty($row[1]) ||
-                stripos($row[1], 'Total') !== false ||
-                stripos($row[1], 'NAMC') !== false) {
+            if (empty($product) ||
+                stripos($product, 'Total') !== false ||
+                stripos($product, 'NAMC') !== false ||
+                stripos($product, 'Category') !== false) {
+                $skipped++;
                 continue;
             }
 
-            $category = trim($row[0]);
-            $product = trim($row[1]);
-            $price = (float) str_replace(',', '.', $row[2]);
-            $protein = (float) str_replace(',', '.', $row[3]);
-            $carbs = (float) str_replace(',', '.', $row[4]);
-            $fat = (float) str_replace(',', '.', $row[5]);
-            $energy_kj = (float) str_replace(',', '.', $row[6]);
+            $price = (float) str_replace(',', '.', $row[2] ?? '0');
+            $protein = (float) str_replace(',', '.', $row[3] ?? '0');
+            $carbs = (float) str_replace(',', '.', $row[4] ?? '0');
+            $fat = (float) str_replace(',', '.', $row[5] ?? '0');
+            $energy_kj = (float) str_replace(',', '.', $row[6] ?? '0');
 
-            // Skip if essential data is missing
-            if (empty($product) || $price <= 0) {
+            // Skip if essential data is missing (but show why)
+            if ($price <= 0) {
+                $this->command->warn("Skipping '{$product}' - no price (price={$price})");
+                $skipped++;
                 continue;
             }
 
@@ -65,10 +82,12 @@ class FoodSeeder extends Seeder
             ]);
 
             $count++;
+            $this->command->line("✓ Added: [{$category}] {$product} - R{$price}");
         }
 
         fclose($file);
 
         $this->command->info("Successfully loaded {$count} food items from CSV.");
+        $this->command->info("Skipped {$skipped} rows (headers, totals, or missing data).");
     }
 }
