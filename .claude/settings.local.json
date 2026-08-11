@@ -5,7 +5,13 @@
       "Bash(git fetch:*)",
       "Bash(\"C:\\Users\\simon\\.config\\herd\\bin\\php.bat\" artisan db:seed --class=FoodSeeder)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(\"C:\\Users\\simon\\.config\\herd\\bin\\php.bat\" test_elytica.php)",
+      "Bash(\"C:\\Users\\simon\\.config\\herd\\bin\\php.bat\" artisan config:clear)",
+      "Bash(\"C:\\Users\\simon\\.config\\herd\\bin\\php.bat\" artisan cache:clear)",
+      "Bash(\"C:\\Users\\simon\\.config\\herd\\bin\\php.bat\" test_create_project.php)",
+      "Bash(\"C:\\Users\\simon\\.config\\herd\\bin\\php.bat\" list_projects.php)"
     ],
     "deny": [],
     "ask": []

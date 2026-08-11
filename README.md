@@ -101,6 +101,15 @@ All food data is stored in a **SQLite database** and loaded from CSV via seeder:
    ELYTICA_MODEL_PATH=app/Services/model.hlpl
    ```
 
+   **Important:** You also need to create a project on Elytica:
+   - Go to https://elytica.com and create a new project
+   - Name it `namc-diet-plan`
+   - Copy the Project ID and add to `.env`:
+   ```env
+   ELYTICA_PROJECT_ID=your_project_id
+   ```
+   See `QUICK_FIX.md` for detailed instructions.
+
 5. **Update CSV path in `database/seeders/FoodSeeder.php` (line 20):**
    ```php
    $csvPath = 'path/to/your/NAMC foodbasket data and nutritional info.csv';
